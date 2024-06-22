@@ -1,0 +1,60 @@
+%function EEG = InverseRejection(EEG)
+
+
+A = get(findobj('tag','eegplot_adv'));
+g = A.UserData;
+% 
+% g.winrej(:,6:end)
+% g.winrej(:,6:end) = abs(g.winrej(:,6:end)-1);
+
+winrej = zeros(size(EEG.data,1),size(EEG.data,2)+5);
+
+for i=1:EEG.trials
+    winrej(i,1) = (EEG.pnts*i)+1-EEG.pnts;
+    winrej(i,2) = EEG.pnts*i;
+    winrej(i,3:5) = [1,0.8,0.9];
+end
+
+count = 0;
+for i=1:EEG.trials
+    if any(winrej(i-count,1) == g.winrej(:,1))
+        winrej(i-count,:) = [];
+        count = count +1;
+    end
+end
+
+if size(EEG.data,3) > 1
+    rejected_epochs = [];
+    for i=1:size(winrej,1)
+        rejected_epochs = [rejected_epochs, floor(winrej(i,1)/EEG.pnts)+1];
+    end
+    [EEGOUT,~] = pop_rejepoch( EEG, rejected_epochs,0);
+    %EEGOUT.suffix = strcat(EEGOUT.suffix,strcat('TJ',num2str(size(regions_for_rej,1))));
+else
+    [EEGOUT,~] = eeg_eegrej( EEG, winrej(:,1:2) );
+    %EEGOUT.suffix = strcat(EEG.suffix,strcat('TJ',num2str(size(regions_for_rej,1))));
+end
+
+[EEGOUT2,~] = quick_PCA(EEGOUT);
+
+EEG.icaact = [];
+EEG.icasphere = [];
+EEG.icaweights = [];
+EEG.icawinv = [];
+%EEG.icachansind = [];
+%EEG.icasplinefile = [];
+
+EEG.icaweights = EEGOUT2.icaweights;
+EEG.icasphere  = EEGOUT2.icasphere;
+EEG.icawinv    = pinv(EEG.icaweights*EEG.icasphere);
+
+ica = icaact(EEG.data,EEG.icaweights*EEG.icasphere);
+
+EEG.icaact = reshape(ica,EEG.nbchan, EEG.pnts, EEG.trials);
+
+EEG = eeg_checkset( EEG );
+
+g.EEG = EEG;
+
+set(findobj('tag','eegplot_adv'),'UserData',g)
+
