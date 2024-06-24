@@ -10,6 +10,7 @@ It can also help you learn about your dataset, and teach students how to clean a
 Here's an example:
 
 ![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/3580f188-1f37-42ba-952c-fe187d63b558)
+In this picture you can see the Data Scroll Pro in action. Two epochs (green) contained two channels that needed to be interpolated, but just for that epoch. One epoch (red) needed to be rejected as it contained a blink. I highlighted the functionalities added to the right panel in various colors, and will explain them below in this text.
 
 Here’s a short list of functionalities added compared to Scrollplot and Scrollplot+
 
