@@ -2,7 +2,7 @@ This is an EEGLAB plugin.
 
 I dreamed of a day when I did not have to interact with prompts while using EEGLAB. As I created newer and newer functions, and modified EEGLAB original scripts, I made this dream come true! This plugin is a love letter to EEGLAB, and what EEGLAB UI could be. 
 
-The original idea was to run EEGLAB functions quickly, without having to interact with prompts. It turnout to be much more. It contains an extremely modified version of EEG scroll plot + and TBT plugins. I recreated an UI were one can perform most EEGLAB functions at an EEG data without leaving the data scroll, and without having to interact with prompts!
+The original idea was to run EEGLAB functions quickly, without having to interact with prompts. It turnout to be much more. It contains various EEGLAB functions with prompt removed, but also and importantly, it contains an extremely modified version of EEG scroll plot + and TBT plugins. I recreated an UI were one can perform most EEGLAB functions at an EEG data without leaving the data scroll, and without having to interact with prompts!
 
 The Data Scroll Pro is primarily useful for people with small datasets with low channels and low epochs, that need desperate cleaning hat can't be done automatically. This allows you to clean each file meticulosuly, removing any and all artifacts.
 It can also help you learn about your dataset, and teach students how to clean and dataset and what a clean and dirty dataset look like.
