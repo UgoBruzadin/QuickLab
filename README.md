@@ -52,9 +52,9 @@ Here’s a short list of functionalities added compared to Scrollplot and Scroll
          0. In conclusion, it identifies channels that have high mean (or median) velocity/acceleration of change that surpass a number of standard deviations based on that window, based on that epoch. I.e. spike detection.
    1. QuickLab
       1. ICA
-         0. Number of components, [] for max rank
-         0. Icatype
-         0. Display components with viewprops+: 0 or 1
+         1. Number of components, [] for max rank
+         2. Icatype
+         3. Display components with viewprops+: 0 or 1
       1. BSS EMG (from AAR library)
          0. Window size and window shift
       1. Re-reference (beta)
