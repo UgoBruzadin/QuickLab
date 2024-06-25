@@ -120,4 +120,4 @@ Quicklab contains a lot of other functions. Here are some:
     - Runs in parallel if available.
   - Quick Parallel Processes: Here, DipFit 1 or 2 dipoles is re-written to be run in parallel. Again, runs super-fast, with no prompts.
 
-
+There's also a dark-mode feature! Change the colors in the QuickLab Defaults for your convenience!
