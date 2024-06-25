@@ -44,7 +44,6 @@ Here’s a short list of functionalities added compared to Scrollplot and Scroll
       1. You can change the number of channels on an epoch that selects that epoch for rejection (instead of interpolating the channels)
       1. Detect flat line, a function from Cleanline, selects channels that are flat.
       1. Detect channel pops is a function that I made. It allows you to run a moving window and detect changes in data variation, based on mean, std, etc. It’s very simple, very weird, but may be useful to detect channel spikes. Here are the variables:
-
          0. Size of window in bins/pnts
          0. Number of standard deviations from that epoch (is it weird IN this epoch?)
          0. Max Rej. window: A maximum size of change window. Helps reduce rejection of slow channels or Alpha/Theta waves. If the “spike” change is larger than 100 bins (default) it will consider it a normal change, not a spike.
@@ -53,24 +52,18 @@ Here’s a short list of functionalities added compared to Scrollplot and Scroll
          0. In conclusion, it identifies channels that have high mean (or median) velocity/acceleration of change that surpass a number of standard deviations based on that window, based on that epoch. I.e. spike detection.
    1. QuickLab
       1. ICA
-
          0. Number of components, [] for max rank
          0. Icatype
          0. Display components with viewprops+: 0 or 1
       1. BSS EMG (from AAR library)
-
          0. Window size and window shift
       1. Re-reference (beta)
-
          0. Select a channel to reference to, or select AVG LE or Original (beta)
       1. Re-epoch (beta)
-
          0. Time 1 and time 2
       1. DipFit(par)
-
          0. Number of components, number of dipoles (1 or 2)
       1. Any script
-
          0. This is marvelous: run ANY SCRIPT on the current data. Have a function that you want to run? Copy, paste, and run. As long as it outputs EEG, it will work.
    1. IClabel
       1. Runs all IClabel functions for component rejection. The best one is all but brain at 80% or more. This can be used for a quick and dirty cleaning of a data.
