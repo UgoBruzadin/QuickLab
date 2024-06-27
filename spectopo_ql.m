@@ -160,6 +160,7 @@ function [eegspecdB,freqs,compeegspecdB,resvar,specstd] = spectopo_ql(data,frame
 % formerly: ... headfreqs,chanlocs,limits,titl,freqfac, percent, varargin)
 
 icadefs;
+QuickLabDefs;
 LOPLOTHZ = 1;  % low  Hz to plot
 FREQFAC  = 1;  % approximate frequencies/Hz (default)
 allcolors = { [0 0.7500 0.7500] 
