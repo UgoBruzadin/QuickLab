@@ -101,10 +101,13 @@ Here’s a short list of functionalities added compared to Scrollplot and Scroll
 Quicklab contains a lot of other functions. Here are some:
 
 - Edit QuickLab defaults: Not an exhaustive list, but I added here a way to change the majority of the defaults of QuickLab. It’s supposed to be suitable for anyone and anyone’s defaults, so that you can process your dataset as quickly as possible.
-- Quick Plots: Viewprops + and Spectopo_ql, as described above.
+- Quick Plots: Viewprops + and Spectopo_ql, as described above.\
+  
 Example of Viewprops+
 ![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/a84ada4f-99bc-4f37-839a-9c4108a0c379)
 Aditions include selecting components for removal directly in the UI by clicking on the headmodel or in the box, as well saving the component for corrmap. All maps plotted in parallel if available, which is in general faster.
+
+
 Example of Spectopo_ql
 ![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/d607abe7-3911-4f5f-8c0a-c0a28b2f0a78)
 Additions include display of any headmodel at any clicked frequency, as well as the frequency and power as selected on the right panel. Also, a convenient save figure button. Headmaps plotted in parallel as well.
