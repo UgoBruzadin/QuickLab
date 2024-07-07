@@ -2550,7 +2550,15 @@ end
               g.allevents = g.events;
           end
 
-          nleg = length(unique([g.allevents.type]));
+          %nleg = length(unique([g.allevents.type]));
+          if ischar(g.allevents(1).type)
+              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
+              nleg = length(unique({g.allevents.type}));
+          else 
+              [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
+              nleg = length(unique([g.allevents.type]));
+          end
+          
           fig2 = figure('numbertitle', 'off', 'name', 'Select Events to Display','tag','legend', 'visible', 'off', 'menubar', 'none', 'color', DEFAULT_FIG_COLOR);
           pos = get(fig2, 'position');
           set(fig2, 'position', [ pos(1) pos(2) 200 14*nleg+20]);
@@ -2561,10 +2569,7 @@ end
 
           set(fig,'UserData',g);
 
-          if ischar(g.allevents(1).type)
-              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
-          else [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
-          end
+          
           %indexcolor=length(indexcolor)-indexcolor+1;
           g.eventcolors2     = { 'r', [0 0.8 0], 'b', 'm', [1 0.5 0],  [0.5 0 0.5], [0.6 0.3 0] };
           g.eventstyle2      = { '-' '-' '-'  '-'  '-' '-' '-' '--' '--' '--'  '--' '--' '--' '--'};
@@ -5378,6 +5383,10 @@ function g = REDO(g)
         options = findobj(gcf,'tag', 'ALLoptions');
         nbadchans = findobj(gcf,'tag', 'TBTnchans');
         pctbadtrial = findobj(gcf,'tag', 'TBT%');
+        % apply selection to specific times
+        % options.split("[")
+        % EEGtemp = EEG.data[:,:,x:y] select data time
+        % 
         
         switch method(1).Value
 
