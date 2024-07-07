@@ -2550,7 +2550,15 @@ end
               g.allevents = g.events;
           end
 
-          nleg = length(unique([g.allevents.type]));
+          %nleg = length(unique([g.allevents.type]));
+          if ischar(g.allevents(1).type)
+              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
+              nleg = length(unique({g.allevents.type}));
+          else 
+              [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
+              nleg = length(unique([g.allevents.type]));
+          end
+          
           fig2 = figure('numbertitle', 'off', 'name', 'Select Events to Display','tag','legend', 'visible', 'off', 'menubar', 'none', 'color', DEFAULT_FIG_COLOR);
           pos = get(fig2, 'position');
           set(fig2, 'position', [ pos(1) pos(2) 200 14*nleg+20]);
@@ -2561,10 +2569,7 @@ end
 
           set(fig,'UserData',g);
 
-          if ischar(g.allevents(1).type)
-              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
-          else [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
-          end
+          
           %indexcolor=length(indexcolor)-indexcolor+1;
           g.eventcolors2     = { 'r', [0 0.8 0], 'b', 'm', [1 0.5 0],  [0.5 0 0.5], [0.6 0.3 0] };
           g.eventstyle2      = { '-' '-' '-'  '-'  '-' '-' '-' '--' '--' '--'  '--' '--' '--' '--'};
@@ -5378,6 +5383,10 @@ function g = REDO(g)
         options = findobj(gcf,'tag', 'ALLoptions');
         nbadchans = findobj(gcf,'tag', 'TBTnchans');
         pctbadtrial = findobj(gcf,'tag', 'TBT%');
+        % apply selection to specific times
+        % options.split("[")
+        % EEGtemp = EEG.data[:,:,x:y] select data time
+        % 
         
         switch method(1).Value
 
@@ -5812,16 +5821,8 @@ end
 bad_chans_flip = find([g.eloc_file.badchan]); % gets bad channels/components
 
 if ~isempty(bad_chans_flip)
-%     if g.EEG.plotchannels
-        bad_chans = [abs((bad_chans_flip - 1) - g.chans )]; % flips the array
-%     else
-%         %bad_chans = [abs(bad_chans - size(g.eloc_file,2))]; % flips the array
-%     end
-%     if ~isempty(bad_chans)
-        %for i=bad_chans_flip
-            plot_matrix(bad_chans,:) = 3; % Paints matrix
-        %end
-    %end
+    bad_chans = [abs((bad_chans_flip - 1) - g.chans )]; % flips the array
+    plot_matrix(bad_chans,:) = 3; % Paints matrix
 end
     %% Adjust matrix if fewer epochs or channels than pixels
     [nRows, nCols] = size(plot_matrix);
@@ -5876,9 +5877,23 @@ function matrix_click_callback(src, event, g)
     clickX = max(1, min(clickX, size(src.CData, 2)));
     clickY = max(1, min(clickY, size(src.CData, 1)));
     
-        
+    % Check if there's a highlighted epoch near the clicked time
+    plot_matrix = src.CData;
+    highlighted_epochs = find(plot_matrix(1, :) ~= -10); % Find all highlighted epochs
+
+    % Find the closest highlighted epoch to the clicked time
+    [~, closest_epoch_idx] = min(abs(highlighted_epochs - clickX));
+    closest_epoch = highlighted_epochs(closest_epoch_idx);
+
+    % Calculate the time to move to
+    %if ~isempty(closest_epoch)
+    %    time = (closest_epoch - 1) * g.EEG.pnts / size(src.CData, 2); % Calculate the time based on the closest highlighted epoch
+    %else
+    time = (clickX - 1) * g.EEG.trials / size(src.CData, 2); % Calculate the time based on the click
+    %end
+
     % Call draw_data with the clicked time
-    time = (clickX - 1) * g.EEG.pnts / size(src.CData, 2); % Calculate the time based on the click
+    %time = (clickX - 1) * g.EEG.pnts / size(src.CData, 2); % Calculate the time based on the click
     draw_data([], [], [], 10, time, []);
 
 
