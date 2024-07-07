@@ -59,7 +59,7 @@ KEEPREF = 'on';
 CORRMAPDEFS = [''];
 
 %% Defaults for PCA/ICA & ICLABEL
-ICATYPE = 'cudaica';
+ICATYPE = 'runica';
 EXTENDED = 1;
 VERBOSE = 'off';
 PCADEFS = ['icatype',ICATYPE,'extended',EXTENDED,'verbose',VERBOSE];
