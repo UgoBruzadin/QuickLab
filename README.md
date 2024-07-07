@@ -29,7 +29,9 @@ Here’s a short list of functionalities added compared to Scrollplot and Scroll
   - Kb: Z on a channel select mouse-hovered channel for rejection, regardless or whether there are epochs selected or not.
   - IMPORTANT: One can perform partial of COMPONENTS. This is extremely useful for components with unique spikes and data with small ranks (low number of components). It allows one to keep the max data rank while removing artifacts identified by the components.
   - It's quite simple: I reject the components, but just for that selected epoch. This way, the rank is mostly untouched and the data is cleaner. Sometimes you can even GAIN rank, depending on how many components you have below the true data rank.
-- Middle click: display the headmodel at the clicked time on the right panel.
+- Middle click:  
+  - In Channel mode: display the headmodel at the clicked time on the right panel.
+  - In Component mode: open the component in a new figure (pop_prop_extended_ql).
   - Kb: V, B, N, M, H, G: display various headmodel based on V: epoch Variance, B: epoch Std, N:Mean, M: MeanLog10, H: Variance difference from the rest of the data, G: Variance of the whole data.
   - These options will help you see if this epoch is trouble or not, and what channels are creating the trouble.
   - Headmodel and Data Matrix will trade with each other without any hiccups. 
