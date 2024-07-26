@@ -710,20 +710,40 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
       if g.EEG.plotchannels == 1
           
           g.eloc_file = g.eloc_file_ch;
-            
-            %g.chans = size(g.eloc_file_ch,2);
+
+          % Compile all previous rejections in one array
+          EEG = eeg_rejsuperpose(EEG,1,1,1,1,1,1,1,1);
+          if ~isempty(EEG.reject.rejglobalE)
+              rej = EEG.reject.rejglobal;
+              rejE = EEG.reject.rejglobalE;
+              points = EEG.pnts;
+              color = [.7 1 .8]; % GREEN not RED
+              winrej = trial2eegplot(rej, rejE, points, color);
+              g.winrej = winrej;
+          end
+            %g.chans = size(g.eloc_file_ch,2); 
             %if g.chans 
 
           if isfield(EEG,'chanrej')
+              
+              %g.winrej = EEG.reject.rejglobalE;
+              
               g.winrej = EEG.chanrej;
-              g.winrej_ch = EEG.chanrej;
+
+              g.winrej = unique(g.winrej,'rows');
+              g.winrej = sortrows(g.winrej,'ascend');
+              g.winrej = merge_trials(g.winrej);
+
+              g.winrej_ch = g.winrej;
               %try g.winrej_pc = EEG.comprej; catch; end
           end
           try g.winrej_pc = EEG.comprej; catch; end
       else
+          
           g.eloc_file = g.eloc_file_pc;
           g.chans = size(g.eloc_file_pc,2);
           if isfield(EEG,'comprej')
+              %EEG = eeg_rejsuperpose(EEG,0,1,1,1,1,1,1,1);
               g.winrej = EEG.comprej;
               g.winrej_pc = EEG.comprej;
               %g.winrej_ch = EEG.chanrej;
@@ -3706,7 +3726,8 @@ if ismember(SelectionType, {'normal', 'alt'})
                         end
                     else
                         if g.trialstag ~= -1 % find nearest trials boundaries if epoched data
-                            alltrialtag = [0:g.trialstag:g.frames]; 
+                            alltrialtag = [0:g.trialstag:g.frames];
+                            %alltrialtag = alltrialtag(1:end);
                             I1 = find(alltrialtag < (tmppos(1)+lowlim) );
                             if ~isempty(I1) && I1(end) ~= length(alltrialtag)
                                 g.winrej = [g.winrej' [alltrialtag(I1(end))+1 (alltrialtag(I1(end)+1)) g.wincolor zeros(1,g.chans)]']';
