@@ -1993,18 +1993,18 @@ else
 %     if size(fig,1) > 2
     g = get(fig,'UserData');
 %     end
-    
-    %[ICL,~] = quick_IClabel(g.EEG); 
-    comps = find(comps);
-    set(fig,'UserData',g);
     if g.EEG.plotchannels == 1
         g = SWITCH(g);
         g.eloc_file = g.eloc_file_pc;
     else
-        for i = comps
+        for i = find(comps)
             g.eloc_file(i).badchan = 1;
         end
     end
+    %[ICL,~] = quick_IClabel(g.EEG); 
+    comps = find(comps);
+    set(fig,'UserData',g);
+
     update_trial_rejections(g);
     draw_data([],[],fig,0,[],g);
 
@@ -5352,14 +5352,15 @@ function g = REDO(g)
    g.EEG.suffix = strcat(g.EEG.suffix,suffix);
    
    %g.NEW = NEW;
-    
-   if g.EEG.plotchannels == 1
-       g.data = NEW.data;
-   else
-       if ~isempty(NEW.icaact)
-           g.data = NEW.icaact;
+   if display_eeg_or_ica == 2
+       if g.EEG.plotchannels == 1
+           g.data = NEW.data;
        else
-           g = SWITCH(g); % THIS DOESNT WORK
+           if ~isempty(NEW.icaact)
+               g.data = NEW.icaact;
+           else
+               g = SWITCH(g); % THIS DOESNT WORK
+           end
        end
    end
    %GET ICA DATA AS WELL
