@@ -21,6 +21,8 @@
 % along with this program; if not, write to the Free Software
 
 %% EEGPLOT_ADV DEFAULTS
+% INSERT location of ica executable (UNIX ONLY) for binica.m below
+EEGTHRESHOLD = [-150 150]
 
 
 %% SPECTOPO DISPLAY DEFAULTS
@@ -59,7 +61,7 @@ KEEPREF = 'on';
 CORRMAPDEFS = [''];
 
 %% Defaults for PCA/ICA & ICLABEL
-ICATYPE = 'runica';
+ICATYPE = 'cudaica';
 EXTENDED = 1;
 VERBOSE = 'off';
 PCADEFS = ['icatype',ICATYPE,'extended',EXTENDED,'verbose',VERBOSE];
