@@ -1,8 +1,8 @@
-% pop_runica() - Run an ICA decomposition of an EEG dataset using runica(), 
+% pop_par_runica() - Run an ICA decomposition of an EEG dataset using runica(), 
 %                binica(), or another ICA or other linear decomposition. 
 % Usage:
-%   >> OUT_EEG = pop_runica( EEG ); % pops-up a data entry window
-%   >> OUT_EEG = pop_runica( EEG, 'key', 'val' ); % no pop_up
+%   >> OUT_EEG = pop_par_runica( EEG ); % pops-up a data entry window
+%   >> OUT_EEG = pop_par_runica( EEG, 'key', 'val' ); % no pop_up
 %
 % Graphic interface:
 %   "ICA algorithm to use" - [edit box] The ICA algorithm to use for 
@@ -98,15 +98,16 @@
 % 03-18-02 add other decomposition options -ad
 % 03-19-02 text edition -sm
 
-function [ALLEEG, com] = pop_runica( ALLEEG, varargin )
+function [ALLEEG, com] = pop_par_runica( ALLEEG, varargin )
 
+QuickLabDefs;
 tmpdata3 = reshape( ALLEEG(1).data(:,:,:), size(ALLEEG(1).data,1), ALLEEG(1).pnts*ALLEEG(1).trials);
 tmprank3 = getrank(double(tmpdata3(:,1:min(3000, size(tmpdata3,2)))));
 %tmpdata3 = tmpdata3 - repmat(mean(tmpdata3,2), [1 size(tmpdata3,2)]); % zero mean 
 
 com = '';
 if nargin < 1   
-    help pop_runica;
+    help pop_par_runica;
     return;
 end
 
@@ -220,8 +221,8 @@ if nargin < 2 || selectamica
     % gui
     % ---
     result       = inputgui( 'geometry', geometry, 'geomvert', geomvert, 'uilist', promptstr, ...
-                             'helpcom', 'pophelp(''pop_runica'')', ...
-                             'title', 'Run ICA decomposition -- pop_runica()', 'userdata', { alllabels alltypes } );
+                             'helpcom', 'pophelp(''pop_par_runica'')', ...
+                             'title', 'Run ICA decomposition -- pop_par_runica()', 'userdata', { alllabels alltypes } );
     if length(result) == 0 return; end      
     options = { 'icatype' allalgs{result{1}} 'dataset' [1:length(ALLEEG)] 'options' eval( [ '{' result{2} '}' ]) 'reorder' fastif(result{3}, 'on', 'off') };
     if ~isempty(result{4})
@@ -251,7 +252,7 @@ end
                             'reorder'        'string'  { 'on','off' }   'on';
                             'store'          'string'  { 'on','off' }   'off';
                             'chanind'        { 'cell','integer' } { [] [] }        [];}, ...
-                            'pop_runica', 'ignore');
+                            'pop_par_runica', 'ignore');
 if ischar(g), error(g); end
 if ~isempty(addoptions), g.options = { g.options{:} addoptions{:}}; end
 
@@ -261,7 +262,7 @@ if length(g.dataset) == 1
     EEG = ALLEEG(g.dataset);
     EEG = eeg_checkset(EEG, 'loaddata');
 elseif length(ALLEEG) > 1 && ~strcmpi(g.concatenate, 'on') && ~strcmpi(g.concatcond, 'on')
-    [ ALLEEG, com ] = eeg_eval( 'pop_runica', ALLEEG, 'warning', 'off', 'params', ...
+    [ ALLEEG, com ] = eeg_eval( 'pop_par_runica', ALLEEG, 'warning', 'off', 'params', ...
            { 'icatype' g.icatype 'options' g.options 'chanind' g.chanind } );
     return;
 elseif length(ALLEEG) > 1 && strcmpi(g.concatcond, 'on')
@@ -292,7 +293,7 @@ elseif length(ALLEEG) > 1 && strcmpi(g.concatcond, 'on')
     end
     fprintf('**************************\nNOW RUNNING ALL DECOMPOSITIONS\n****************************\n');
     for index = 1:length(dats)
-        ALLEEG(dats{index}) = pop_runica(ALLEEG(dats{index}), 'icatype', g.icatype, ...
+        ALLEEG(dats{index}) = pop_par_runica(ALLEEG(dats{index}), 'icatype', g.icatype, ...
             'options', g.options, 'chanind', g.chanind, 'concatenate', 'on');
         for idat = 1:length(dats{index})
             ALLEEG(dats{index}(idat)).saved = 'no';
@@ -300,7 +301,7 @@ elseif length(ALLEEG) > 1 && strcmpi(g.concatcond, 'on')
             ALLEEG(dats{index}(idat)).saved = 'yes';
         end
     end
-    com = sprintf('EEG = pop_runica(EEG, %s);', ...
+    com = sprintf('EEG = pop_par_runica(EEG, %s);', ...
               vararg2str({ 'icatype' g.icatype 'concatcond' 'on' 'options' g.options }) );
     return;
 else
@@ -435,7 +436,7 @@ switch lower(g.icatype)
         fprintf(['Warning: If the binary ICA function does not work, check that you have added the\n' ...
                  'binary file location (in the EEGLAB directory) to your Unix /bin directory (.cshrc file)\n']);
         if exist(ICABINARY) ~= 2
-            error('Pop_runica(): binary ICA executable not found. Edit icadefs.m file to specify the ICABINARY location');
+            error('pop_par_runica(): binary ICA executable not found. Edit icadefs.m file to specify the ICABINARY location');
         end
         tmprank = getrank(tmpdata(:,1:min(3000, size(tmpdata,2))));
         if tmprank == size(tmpdata,1) || pca_opt
@@ -450,7 +451,7 @@ switch lower(g.icatype)
         fprintf(['Warning: If the binary ICA function does not work, check that you have added the\n' ...
                  'binary file location (in the EEGLAB directory) to your Unix /bin directory (.cshrc file)\n']);
         if exist(ICABINARY) ~= 2
-            error('Pop_runica(): binary ICA executable not found. Edit icadefs.m file to specify the ICABINARY location');
+            error('pop_par_runica(): binary ICA executable not found. Edit icadefs.m file to specify the ICABINARY location');
         end
         tmprank = getrankMin(tmpdata(:,1:min(3000, size(tmpdata,2))));
         if tmprank == size(tmpdata,1) || pca_opt
@@ -556,7 +557,7 @@ switch lower(g.icatype)
         end
         clear tmp;
         close(fig);
-     otherwise, error('Pop_runica: unrecognized algorithm');
+     otherwise, error('pop_par_runica: unrecognized algorithm');
 end
 
 % update weight and inverse matrices etc...
@@ -601,9 +602,9 @@ end
 
 if nargin < 2 || selectamica
     if ~isempty(g.options)
-        com = sprintf('EEG = pop_runica(EEG, ''icatype'', ''%s'', %s);', g.icatype, vararg2str(g.options) ); %vararg2str({ 'icatype' g.icatype 'dataset' g.dataset 'options' g.options }) );
+        com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'', %s);', g.icatype, vararg2str(g.options) ); %vararg2str({ 'icatype' g.icatype 'dataset' g.dataset 'options' g.options }) );
     else
-        com = sprintf('EEG = pop_runica(EEG, ''icatype'', ''%s'');',g.icatype );
+        com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'');',g.icatype );
     end
 end
 
