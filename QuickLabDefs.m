@@ -22,7 +22,7 @@
 
 %% EEGPLOT_ADV DEFAULTS
 % INSERT location of ica executable (UNIX ONLY) for binica.m below
-EEGTHRESHOLD = [-150 150]
+EEGTHRESHOLD = [-150 150];
 
 
 %% SPECTOPO DISPLAY DEFAULTS
