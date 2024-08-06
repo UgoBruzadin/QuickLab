@@ -21,15 +21,16 @@
 % along with this program; if not, write to the Free Software
 
 %% EEGPLOT_ADV DEFAULTS
-% INSERT location of ica executable (UNIX ONLY) for binica.m below
-EEGTHRESHOLD = [-150 150];
+EEGTHRESHOLD = [-150, 150];
+ALLBUTBRAIN = [0.8, 1] ;
+
 
 
 %% SPECTOPO DISPLAY DEFAULTS
 % Highest Frequency, Lowest Frequency, Maxwindow
-FREQDISPLAYDEFS = [40,2,2048];
+FREQDISPLAYDEFS = [60,0,2048];
 % Specific Expected Frequencies for Topoplot Display 
-SPECTRATOPO = [4 5 6 7 8 9 10 11 12 15 18 20 25 30 36];
+SPECTRATOPO = [2 4 6 8 10 12 15 18 20 25 30 36];
 
 %% Headmodel and references defaults
 % Location of Headmodel(s)
@@ -38,7 +39,7 @@ HEADMODELLOCATION = ['']; % location of headmodel file
 % References
 OG_REF = 'Cz';
 CZ_REF = 'Cz';
-LE_REFS = [57 100];
+LE_REFS = [58 64];
 
 % try
 %     if ~isempty(EEG)
@@ -68,7 +69,7 @@ PCADEFS = ['icatype',ICATYPE,'extended',EXTENDED,'verbose',VERBOSE];
 
 % ICLABEL type, Highest Frequency, Lowest Frquency
 
-ICLABELDEFS = ['default',40,2];
+ICLABELDEFS = ['default',60,0];
 
 %% Number of dipoles to plot in DIPFIT (1 or 2)
 DIPFITDEFS = [1];
@@ -107,6 +108,7 @@ SAVEDATAMARKERTITLE = 'SM';
 %% COLOR DEFAULTS
 
 COLOR_MODE = 'Default';
+%     COLOR_MODE = 'DarkMode';
 
 % darkmode = readtext('IsDarkmodeOn.txt');
 % if iscell(darkmode)
