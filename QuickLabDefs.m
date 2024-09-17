@@ -20,6 +20,8 @@
 % You should have received a copy of the GNU General Public License
 % along with this program; if not, write to the Free Software
 
+SAVEBACKUP = 1;
+
 %% EEGPLOT_ADV DEFAULTS
 EEGTHRESHOLD = [-150, 150];
 ALLBUTBRAIN = [0.8, 1] ;

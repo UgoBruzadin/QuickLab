@@ -445,8 +445,8 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
   
   %% Try Defaults
     try g.data;                 catch g.data = [];                   end       
-     try g.data_ch;                 catch g.data_ch = [];                   end       
-     try g.data_pc;                 catch g.data_pc = [];                   end       
+     try g.data_ch = EEG.data;                 catch g.data_ch = [];                   end       
+     try g.data_pc = EEG.icaact;                 catch g.data_pc = [];                   end       
     try g.rand;                catch g.rand = floor(rand()*1000);  end
      try g.old;                 catch g.old = {};                   end    
      try g.gnumber;             catch g.gnumber     = 1;            end
@@ -656,7 +656,30 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
   g.nbdat = 1; % deprecated
   g.time  = 0;
   g.elecoffset = 0;
-  
+  %%
+  if EEG.plotchannels == 1
+        g.data = data;
+        g.data_ch = data;
+        if isempty(EEG.icaact)
+            EEG.icaact = eeg_getdatact(EEG, 'component', [1:size(EEG.icaweights,1)]);
+            g.EEG.icaact = EEG.icaact;
+            g.data_pc = EEG.icaact;
+        else
+            g.data_pc = EEG.icaact;
+        end
+  else
+      g.data_ch = data;
+        if isempty(EEG.icaact)
+            EEG.icaact = eeg_getdatact(EEG, 'component', [1:size(EEG.icaweights,1)]);
+            g.EEG.icaact = EEG.icaact;
+            g.data = EEG.icaact;
+            g.data_pc = EEG.icaact;
+        else
+            data = EEG.icaact;
+            g.data = EEG.icaact;
+            g.data_pc = EEG.icaact;
+        end
+  end
   %% Collect winrejs and badchans
   % ------------ 
   if isstruct(EEG)
@@ -710,40 +733,20 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
       if g.EEG.plotchannels == 1
           
           g.eloc_file = g.eloc_file_ch;
-
-          % Compile all previous rejections in one array
-          EEG = eeg_rejsuperpose(EEG,1,1,1,1,1,1,1,1);
-          if ~isempty(EEG.reject.rejglobalE)
-              rej = EEG.reject.rejglobal;
-              rejE = EEG.reject.rejglobalE;
-              points = EEG.pnts;
-              color = [.7 1 .8]; % GREEN not RED
-              winrej = trial2eegplot(rej, rejE, points, color);
-              g.winrej = winrej;
-          end
-            %g.chans = size(g.eloc_file_ch,2); 
+            
+            %g.chans = size(g.eloc_file_ch,2);
             %if g.chans 
 
           if isfield(EEG,'chanrej')
-              
-              %g.winrej = EEG.reject.rejglobalE;
-              
               g.winrej = EEG.chanrej;
-
-              g.winrej = unique(g.winrej,'rows');
-              g.winrej = sortrows(g.winrej,'ascend');
-              g.winrej = merge_trials(g.winrej);
-
-              g.winrej_ch = g.winrej;
+              g.winrej_ch = EEG.chanrej;
               %try g.winrej_pc = EEG.comprej; catch; end
           end
           try g.winrej_pc = EEG.comprej; catch; end
       else
-          
           g.eloc_file = g.eloc_file_pc;
           g.chans = size(g.eloc_file_pc,2);
           if isfield(EEG,'comprej')
-              %EEG = eeg_rejsuperpose(EEG,0,1,1,1,1,1,1,1);
               g.winrej = EEG.comprej;
               g.winrej_pc = EEG.comprej;
               %g.winrej_ch = EEG.chanrej;
@@ -1993,18 +1996,18 @@ else
 %     if size(fig,1) > 2
     g = get(fig,'UserData');
 %     end
+    
+    %[ICL,~] = quick_IClabel(g.EEG); 
+    comps = find(comps);
+    set(fig,'UserData',g);
     if g.EEG.plotchannels == 1
         g = SWITCH(g);
         g.eloc_file = g.eloc_file_pc;
     else
-        for i = find(comps)
+        for i = comps
             g.eloc_file(i).badchan = 1;
         end
     end
-    %[ICL,~] = quick_IClabel(g.EEG); 
-    comps = find(comps);
-    set(fig,'UserData',g);
-
     update_trial_rejections(g);
     draw_data([],[],fig,0,[],g);
 
@@ -2076,6 +2079,7 @@ else
     
   case 'SWITCH'
     g = get(fig,'UserData');
+
     g = SWITCH(g);
     
     h = findobj(fig, 'tag', 'SWITCH');
@@ -2570,15 +2574,7 @@ end
               g.allevents = g.events;
           end
 
-          %nleg = length(unique([g.allevents.type]));
-          if ischar(g.allevents(1).type)
-              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
-              nleg = length(unique({g.allevents.type}));
-          else 
-              [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
-              nleg = length(unique([g.allevents.type]));
-          end
-          
+          nleg = length(unique([g.allevents.type]));
           fig2 = figure('numbertitle', 'off', 'name', 'Select Events to Display','tag','legend', 'visible', 'off', 'menubar', 'none', 'color', DEFAULT_FIG_COLOR);
           pos = get(fig2, 'position');
           set(fig2, 'position', [ pos(1) pos(2) 200 14*nleg+20]);
@@ -2589,7 +2585,10 @@ end
 
           set(fig,'UserData',g);
 
-          
+          if ischar(g.allevents(1).type)
+              [g.eventtypes2, ~, indexcolor] = unique_bc({g.allevents.type}); % indexcolor countinas the event type
+          else [g.eventtypes2, ~, indexcolor] = unique_bc([ g.allevents.type ]);
+          end
           %indexcolor=length(indexcolor)-indexcolor+1;
           g.eventcolors2     = { 'r', [0 0.8 0], 'b', 'm', [1 0.5 0],  [0.5 0 0.5], [0.6 0.3 0] };
           g.eventstyle2      = { '-' '-' '-'  '-'  '-' '-' '-' '--' '--' '--'  '--' '--' '--' '--'};
@@ -2930,6 +2929,9 @@ function draw_data(varargin)
    
     % Plot data and update axes
     % -------------------------
+    % if isempty(data)
+    %     if 
+    %     data = g.
     switch lower(g.submean) % subtract the mean ?
         case 'on'
             if ~isempty(g.data2)
@@ -3726,8 +3728,7 @@ if ismember(SelectionType, {'normal', 'alt'})
                         end
                     else
                         if g.trialstag ~= -1 % find nearest trials boundaries if epoched data
-                            alltrialtag = [0:g.trialstag:g.frames];
-                            %alltrialtag = alltrialtag(1:end);
+                            alltrialtag = [0:g.trialstag:g.frames]; 
                             I1 = find(alltrialtag < (tmppos(1)+lowlim) );
                             if ~isempty(I1) && I1(end) ~= length(alltrialtag)
                                 g.winrej = [g.winrej' [alltrialtag(I1(end))+1 (alltrialtag(I1(end)+1)) g.wincolor zeros(1,g.chans)]']';
@@ -4895,107 +4896,116 @@ function plot_topoplot_old(fig)
         draw_matrix(g);
 
 function g = SWITCH(g)
-    
-    g = get(gcf,'UserData');
-    if ~isempty(g.EEG.icawinv)
-    %g = THINKING(g,1);
 
-    EEG = g.EEG;
-    ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
+% THIS FUNCTION SWITCH BETWEEN EEG DATA AND ICA DATA
 
-    if EEG.plotchannels == 1 
-        g.EEG.plotchannels = 0;
+    g = get(gcf,'UserData');% Get data from figure
+    if ~isempty(g.EEG.icawinv) %
 
-        g.eloc_file_ch = g.eloc_file;
-        g.eloc_file = g.eloc_file_pc;
+        EEG = g.EEG;
+        ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
 
-        g.datastd_ch = g.datastd;
-        g.datastd = g.datastd_pc;
+        if EEG.plotchannels == 1
+            g.EEG.plotchannels = 0; % Change the variable that stores whether is ICA or EEG
 
-        g.normed_ch = g.normed;
-        g.normed = g.normed_pc;
+            % Store backups of the important variables
+            
+            g.eloc_file_ch = g.eloc_file;
+            g.datastd_ch = g.datastd;
+            g.normed_ch = g.normed;
+            g.winrej_ch = g.winrej;
+            g.data_ch = g.data;
+            
+            % Collect the ICA/PCA variables
 
-%         if g.normed == 1
+            g.eloc_file = g.eloc_file_pc;
+            g.datastd = g.datastd_pc;
+            g.normed = g.normed_pc;
+            g.winrej = g.winrej_pc;
+            if isempty(EEG.icaact)
+                g.data = eeg_getdatact(EEG, 'component', [1:size(EEG.icaweights,1)]);
+                g.data_pc = eeg_getdatact(EEG, 'component', [1:size(EEG.icaweights,1)]);
+            else
+                g.data = EEG.icaact;
+                g.data_pc = EEG.icaact;
+            end
+            g.chans = size(EEG.icaact,1);
+
+            % Change normed to default
+            g.normed = 0;
+
+            hbutton = findobj(gcf, 'Tag', 'Norm');
+            set(hbutton,'string', 'Norm');
+            %         else
+            %             hbutton = findobj(gcf, 'Tag', 'Norm');
+            %             set(hbutton,'string', 'Denorm');
+            %         end           
+
+            g = optim_scale(g.data,g); % not sure what it does
+
+            g.spacing = 0;
+            fprintf('Showing ICA data \r');
+        else
+            g.EEG.plotchannels = 1;
+
+            % Store backups of the important variables
+
+            g.eloc_file_pc = g.eloc_file;
+            g.datastd_pc = g.datastd;
+            g.normed_pc = g.normed;
+            g.winrej_pc = g.winrej;
+            g.data_pc = g.data;
+
+            g.eloc_file = g.eloc_file_ch;
+
+            g.datastd = g.datastd_ch;
+            g.normed = g.normed_ch;
+            g.winrej = g.winrej_ch;
+            g.data = EEG.data;
+            g.data_ch = EEG.data;
+            g.chans = EEG.nbchan;
+
+            %         if g.normed == 1
             g.normed = 0;
             hbutton = findobj(gcf, 'Tag', 'Norm');
             set(hbutton,'string', 'Norm');
-%         else
-%             hbutton = findobj(gcf, 'Tag', 'Norm');
-%             set(hbutton,'string', 'Denorm');
-%         end
+            %         else
+            %             hbutton = findobj(gcf, 'Tag', 'Norm');
+            %             set(hbutton,'string', 'Denorm');
+            %         end
+           
+            g.spacing = 0;
+           
 
-        g.winrej_ch = g.winrej;
-        g.winrej = g.winrej_pc;
-        
-        g.data_ch = g.data;
-%         if isempty(g.data_pc)
-        g.data = EEG.icaact;
-%         else
-%             g.data = g.data_pc;
-%         end
+            %         if isempty(g.data_ch)
+            
+            
+            %         else
+            %             g.data = g.data_ch;
+            %         end
 
-        g.chans = size(EEG.icaact,1);
+            g = optim_scale(g.data,g);
 
-        g=optim_scale(g.data,g);
+            
+            fprintf('Showing EEG data \r');
+        end
 
-        g.spacing = 0;
-        fprintf('Showing ICA data \r');
-    else
-        g.EEG.plotchannels = 1;
+        %g = THINKING(g,0);
+        %g.normed = 0;
+        %g = make_eloc_file(g);
+        %set(gcf,'Color',g.backcolor);
+        set(gcf,'UserData',g);
+        set(ax1,'UserData',g.data);
 
-        g.eloc_file_pc = g.eloc_file;
-        g.eloc_file = g.eloc_file_ch;
+        draw_data([],[],gcf,9,[],g);
 
-        g.datastd_pc = g.datastd;
-        g.datastd = g.datastd_ch;
-    
-        g.normed_pc = g.normed;
-        g.normed = g.normed_ch;
-
-%         if g.normed == 1
-            g.normed = 0;
-            hbutton = findobj(gcf, 'Tag', 'Norm');
-            set(hbutton,'string', 'Norm');
-%         else
-%             hbutton = findobj(gcf, 'Tag', 'Norm');
-%             set(hbutton,'string', 'Denorm');
-%         end
-
-        g.winrej_pc = g.winrej;
-        g.winrej = g.winrej_ch;
-        
-        g.spacing = 0;
-        
-        g.data_pc = g.data;
-
-%         if isempty(g.data_ch)
-             g.data = EEG.data;
-%         else
-%             g.data = g.data_ch;
-%         end
-        
-        g = optim_scale(g.data,g);
-
-        g.chans = EEG.nbchan;
-        fprintf('Showing EEG data \r');
-    end
-
-    %g = THINKING(g,0);
-    %g.normed = 0;
-    %g = make_eloc_file(g);
-    %set(gcf,'Color',g.backcolor);
-    set(gcf,'UserData',g);
-    set(ax1,'UserData',g.data);
-    
-    draw_data([],[],gcf,9,[],g);
-    
-    eegplot_adv('winelec_auto');
-    draw_matrix(g);
-    %change_scale(ax1,gcf,1);
+        eegplot_adv('winelec_auto');
+        draw_matrix(g);
+        %change_scale(ax1,gcf,1);
     end
 
 function g = APPLY(g)
-
+    QuickLabDefs;
     g = get(gcf,'UserData');
     %g = THINKING(g,1); %blocks all clicks and movements to avoid crashes and errors
 
@@ -5026,10 +5036,14 @@ function g = APPLY(g)
         g.winrej_ch = g.winrej;
         applycom_ch = 'NEW=EEG;[NEW LASTCOM1] = eeg_eegrej_adv(NEW,g.winrej,1,find([g.eloc_file.badchan])); ' ; %modified for eegrej2
         eval(applycom_ch);
+        g.winrej_ch = [];
+        g.winrej = [];
     else
         g.winrej_pc = g.winrej;
         applycom_pc = 'NEW=EEG;[NEW LASTCOM1] = eeg_eegrej_adv(NEW,g.winrej,2,find([g.eloc_file.badchan])); ' ; %modified for eegrej2
         eval(applycom_pc);
+        g.winrej_pc = [];
+        g.winrej = [];
 %         if isempty(NEW.icaact)
 %             NEW.icaact = (NEW.icaweights*NEW.icasphere)*NEW.data(NEW.icachansind,:);
 %         end
@@ -5039,22 +5053,29 @@ function g = APPLY(g)
     % collect new EEG
     g.EEG = NEW;
     % clear winrej variables of the new file
-    g.winrej = [];
-    g.winrej_pc = [];
-    g.winrej_ch = [];
+   
+    
     % clear suffix
-    g.EEG.suffix = [];
-    set( findobj(gcf,'tag','SaveNowText'),'String','');
+    if SAVEBACKUP == 1
+        g.EEG.suffix = [];
+        set( findobj(gcf,'tag','SaveNowText'),'String','');
+    end
     % reset norm
-    g.normed = 1;
+    g.normed = 0;
     
     % get correct data
-    if isfield(EEG,'plotchannels')
+    if isfield(g.EEG,'plotchannels')
         %fastif(EEG.plotchannels,g.data = g.EEG.data;g.data = g.EEG.icaact;)
-        if EEG.plotchannels == 1
+        if g.EEG.plotchannels == 1
             g.data = g.EEG.data;
         else
-            g.data = g.EEG.icaact;
+            if isempty(g.EEG.icaact)
+                g.EEG.icaact = eeg_getdatact(g.EEG, 'component', [1:size(g.EEG.icaweights,1)]);
+                
+                g.data = g.EEG.icaact;
+            else
+                g.data = g.EEG.icaact;
+            end
         end
     end
     
@@ -5352,15 +5373,14 @@ function g = REDO(g)
    g.EEG.suffix = strcat(g.EEG.suffix,suffix);
    
    %g.NEW = NEW;
-   if display_eeg_or_ica == 2
-       if g.EEG.plotchannels == 1
-           g.data = NEW.data;
+    
+   if g.EEG.plotchannels == 1
+       g.data = NEW.data;
+   else
+       if ~isempty(NEW.icaact)
+           g.data = NEW.icaact;
        else
-           if ~isempty(NEW.icaact)
-               g.data = NEW.icaact;
-           else
-               g = SWITCH(g); % THIS DOESNT WORK
-           end
+           g = SWITCH(g); % THIS DOESNT WORK
        end
    end
    %GET ICA DATA AS WELL
@@ -5405,10 +5425,6 @@ function g = REDO(g)
         options = findobj(gcf,'tag', 'ALLoptions');
         nbadchans = findobj(gcf,'tag', 'TBTnchans');
         pctbadtrial = findobj(gcf,'tag', 'TBT%');
-        % apply selection to specific times
-        % options.split("[")
-        % EEGtemp = EEG.data[:,:,x:y] select data time
-        % 
         
         switch method(1).Value
 

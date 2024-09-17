@@ -108,10 +108,11 @@ else
 end
 
 %% --- STORE CURRENT MARKS TO FILE
+QuickLabDefs
 %[EEG] = pop_saveset(EEG, 'filepath',EEG.filepath);
-%if SAVEBACKUP == 'YES' %, save
+if SAVEBACKUP == 1 %, save
     [EEG] = pop_saveset(EEG, 'filename', [strcat( EEG.filename(1:end-4),'s','.set')],'filepath',EEG.filepath);
-%end
+end
 EEG.myVariables = {};
 EEG.filename(1:end-4);
 %[EEG] = eeg_store(EEG); 
@@ -413,28 +414,34 @@ try EEGOUT.suffix = replace(EEGOUT.suffix,';',''); catch; end
 try EEGOUT.suffix = replace(EEGOUT.suffix,';',''); catch; end
 
 %% --- Save file
-if isfield(EEGOUT,'save')
-    EEGOUT.setname = setname;
 
-    if EEGOUT.save == 1
-        EEGOUT.save = 0;
+QuickLabDefs;
 
-        ss = EEGOUT.suffix;
-        EEGOUT.suffix = [];
-        EEGOUT = pop_saveset(EEGOUT, 'filename', [strcat( EEGOUT.filename(1:end-4),ss,'.set')],'filepath',EEGOUT.filepath);
-        %EEGOUT.suffix = [];
-        EEGOUT.filename(1:end-4)
-        if isfield(EEGOUT,'ICA')
-            if EEGOUT.ICA == 1
-            [EEGOUT,~] = quick_PCA(EEGOUT,[],[],0);
-            EEGOUT.ICA = 0;
+if SAVEBACKUP == 1
+    
+    if isfield(EEGOUT,'save')
+        EEGOUT.setname = setname;
+    
+        if EEGOUT.save == 1
+            EEGOUT.save = 0;
+    
+            ss = EEGOUT.suffix;
             EEGOUT.suffix = [];
-            %EEGOUT = quick_eegsave(EEGOUT,'ICA');
+            EEGOUT = pop_saveset(EEGOUT, 'filename', [strcat( EEGOUT.filename(1:end-4),ss,'.set')],'filepath',EEGOUT.filepath);
+            %EEGOUT.suffix = [];
+            EEGOUT.filename(1:end-4)
+            if isfield(EEGOUT,'ICA')
+                if EEGOUT.ICA == 1
+                    [EEGOUT,~] = quick_PCA(EEGOUT,[],[],0);
+                    EEGOUT.ICA = 0;
+                    EEGOUT.suffix = [];
+                    %EEGOUT = quick_eegsave(EEGOUT,'ICA');
+                end
             end
+    %         eval(get(findobj('tag','LoadDir'),'Callback'));
+    %         eeglab redraw;
+            %eval(get(findobj('tag','LoadPost'),'Callback'));
         end
-%         eval(get(findobj('tag','LoadDir'),'Callback'));
-%         eeglab redraw;
-        %eval(get(findobj('tag','LoadPost'),'Callback'));
     end
 end
 % sends com to eegh?

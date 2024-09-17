@@ -11,14 +11,17 @@ loaddircommand = [changename, changeICA, 'try, if isempty(EEG.setname);EEG = pop
 
 savecommand = ['[EEG] = pop_saveset(EEG, ''filename'', [strcat( EEG.filename(1:end-4),get(findobj(''Tag'',''SAVETEXT2''),''String''),''.set'')],''filepath'',EEG.filepath);'...
      '[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);' loaddircommand 'eeglab redraw; quick_eeghack()']; %save set ADDED BY UGO
+
+
 %%% move up
 %loadprecommand = ['findex = find(strcmp({files.name}, EEG.filename));if findex > 1, findex = findex - 1, EEG = pop_loadset( files(findex).name, pwd); eeglab redraw, end;'];
 %%% move down
 %loadpostcommand = ['findex = find(strcmp({files.name}, EEG.filename));if findex < length(files), findex = findex + 1, EEG = pop_loadset( files(findex).name, pwd); eeglab redraw, end; '];
 %%% loadfile
-loadfilecommand = ['EEG = pop_loadset( files(get(findobj(''Tag'',''LoadFileList2''),''Value'')).name, pwd);eeglab redraw; quick_eeghack()'];
+loadfilecommand = ['files = dir(''.set'');EEG = pop_loadset(get(findobj(''Tag'',''LoadFileList2''),''Value''), pwd);eeglab redraw; quick_eeghack()'];
 
 %%% Create Buttons and Menu addons
+
 savetitle = uicontrol(gcf,'Style', 'text', 'Units','Normalized','Tag', 'SAVETITLE2', 'String', 'Save as: ',...
     'Position', [0.05 0.05 0.08 0.05]);
 
@@ -41,6 +44,8 @@ loadfile = uicontrol(gcf, 'Style', 'popupmenu','Units','Normalized','Tag', 'Load
     'Position', [0.48 0.05 0.45 0.05]);
 
 %%% Change buttons and text color backgrounds
+
+
 
 
 
