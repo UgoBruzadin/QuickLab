@@ -4905,7 +4905,7 @@ function g = SWITCH(g)
         EEG = g.EEG;
         ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
 
-        if EEG.plotchannels == 1
+        if g.EEG.plotchannels == 1
             g.EEG.plotchannels = 0; % Change the variable that stores whether is ICA or EEG
 
             % Store backups of the important variables
@@ -4936,14 +4936,10 @@ function g = SWITCH(g)
 
             hbutton = findobj(gcf, 'Tag', 'Norm');
             set(hbutton,'string', 'Norm');
-            %         else
-            %             hbutton = findobj(gcf, 'Tag', 'Norm');
-            %             set(hbutton,'string', 'Denorm');
-            %         end           
-
+            
+            g.spacing = 0;
             g = optim_scale(g.data,g); % not sure what it does
 
-            g.spacing = 0;
             fprintf('Showing ICA data \r');
         else
             g.EEG.plotchannels = 1;
@@ -4955,9 +4951,9 @@ function g = SWITCH(g)
             g.normed_pc = g.normed;
             g.winrej_pc = g.winrej;
             g.data_pc = g.data;
-
+            
+            % Collect the Channel variables
             g.eloc_file = g.eloc_file_ch;
-
             g.datastd = g.datastd_ch;
             g.normed = g.normed_ch;
             g.winrej = g.winrej_ch;
@@ -4965,27 +4961,14 @@ function g = SWITCH(g)
             g.data_ch = EEG.data;
             g.chans = EEG.nbchan;
 
-            %         if g.normed == 1
             g.normed = 0;
             hbutton = findobj(gcf, 'Tag', 'Norm');
             set(hbutton,'string', 'Norm');
-            %         else
-            %             hbutton = findobj(gcf, 'Tag', 'Norm');
-            %             set(hbutton,'string', 'Denorm');
-            %         end
-           
+
             g.spacing = 0;
-           
-
-            %         if isempty(g.data_ch)
-            
-            
-            %         else
-            %             g.data = g.data_ch;
-            %         end
-
             g = optim_scale(g.data,g);
-
+          
+            %change_scale([],[],fig,2,ax2);
             
             fprintf('Showing EEG data \r');
         end
@@ -5059,6 +5042,8 @@ function g = APPLY(g)
     if SAVEBACKUP == 1
         g.EEG.suffix = [];
         set( findobj(gcf,'tag','SaveNowText'),'String','');
+    else
+        set( findobj(gcf,'tag','SaveNowText'),'String',g.EEG.suffix);
     end
     % reset norm
     g.normed = 0;
