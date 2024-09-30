@@ -1,4 +1,4 @@
-% eegplugin_QuickLab() - QuickLab plugin version 0.9 for EEGLAB menu.
+% eegplugin_QuickLab() - QuickLab plugin version 0.91 for EEGLAB menu.
 %                        QuickLab is a compilation of modified EEGLAB functions
 %                        for experienced users that wish to speed up manual
 %                        process, made by Ugo Bruzadin Nunes in
@@ -23,7 +23,7 @@
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 function vers = eegplugin_QuickLab(fig, try_strings, catch_strings)
 
-vers = 0.9;
+vers = 0.91;
 % --- QuickLab sumermenu placeholder
 supermenu = uimenu(fig, 'label', 'QuickLab');
 
