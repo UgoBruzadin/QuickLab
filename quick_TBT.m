@@ -30,6 +30,11 @@ else
     EEG.winrej = [];
     winrejPRE = [];
 end
+if isfield(EEG,'badchans')
+    EEG.badchans = zeros(size(EEG.data,1),1);
+else
+    
+end
 
 if plotchannels ~= 1
     icacomp = '0';
@@ -49,7 +54,7 @@ end
 switch method
 
     case 7
-        options;
+        %options;
         EEG = detect_flatline(EEG);
         %update_trial_rejections(EEG);
         %return;
@@ -102,7 +107,7 @@ channel_index = sum(winrej,2)/EEG.trials >= pctbadtrial/100;   % boolean list
 if sum(channel_index)
     badchannels = find(channel_index);
     for ind = badchannels'
-        EEG.eloc_file(ind).badchan = 1; % marks channels as bad
+        EEG.badchans(ind) = 1; % marks channels as bad
         % removes these channels from trial rejections!
         winrej(ind,:) = 0;
     end
@@ -149,7 +154,6 @@ function EEG = detect_flatline(EEG,max_flatline_duration,max_allowed_jitter)
    % modified from cleanline plugin
    % Copyright (C) Christian Kothe, SCCN, 2012, ckothe@ucsd.edu
 
-   EEG = g.EEG;
    if nargin < 2
        max_flatline_duration = 5;
        max_allowed_jitter = 0.1;
@@ -158,7 +162,7 @@ function EEG = detect_flatline(EEG,max_flatline_duration,max_allowed_jitter)
    for c = 1:EEG.nbchan
        zero_intervals = reshape(find(diff([false abs(diff(EEG.data(c,:)))<(max_allowed_jitter) false])),2,[])';
        if max(zero_intervals(:,2) - zero_intervals(:,1)) > max_flatline_duration*EEG.srate
-           EEG.chanlocs(c).badchan = 1;
+           EEG.badchans = 1;
        end
    end
 
