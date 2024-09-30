@@ -26,8 +26,6 @@ SAVEBACKUP = 1;
 EEGTHRESHOLD = [-150, 150];
 ALLBUTBRAIN = [0.8, 1] ;
 
-
-
 %% SPECTOPO DISPLAY DEFAULTS
 % Highest Frequency, Lowest Frequency, Maxwindow
 FREQDISPLAYDEFS = [60,0,2048];
