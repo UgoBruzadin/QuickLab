@@ -1329,7 +1329,7 @@ g.scripts = ['BSS|' ...
         'Epoch|'...
         'Channel Reduction'];
 
-if g.EEG.plotchannels
+if g.EEG.plotchannels == 1
     cmodecolor = DEFAULT_ON_COLOR;
     cmode = 'Show ICA'; 
 else
@@ -2084,7 +2084,7 @@ else
     
     h = findobj(fig, 'tag', 'SWITCH');
     if ~isempty(g.EEG.icawinv)
-        if g.EEG.plotchannels
+        if g.EEG.plotchannels == 1
             %set(h,'string','EEG data ON');
             set(h,'string','Show ICA');
             set(h, 'BackGroundColor', DEFAULT_ON_COLOR);
@@ -3676,7 +3676,7 @@ QuickLabDefs;
 %get(fig, 'SelectionType') % prints what selection has been done
 if strcmp(get(fig, 'SelectionType'),'extend')
     
-    if g.EEG.plotchannels
+    if g.EEG.plotchannels == 1
         plot_topoplot_CHANNEL(fig,{'v'})
     else
         eegplot_adv('topoplot', fig);
@@ -5015,7 +5015,7 @@ function g = APPLY(g)
     
     EEG.save = 1;
     EEG.ICA = 0;
-    if g.EEG.plotchannels
+    if g.EEG.plotchannels == 1
         g.winrej_ch = g.winrej;
         applycom_ch = 'NEW=EEG;[NEW LASTCOM1] = eeg_eegrej_adv(NEW,g.winrej,1,find([g.eloc_file.badchan])); ' ; %modified for eegrej2
         eval(applycom_ch);
