@@ -900,6 +900,12 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
 
   posbut(68,:) = [ bottoms(2)    0.82+r    widths(1)    heights(1) ]; %  ICA weights/rank tag
   posbut(69,:) = [ bottoms(2)    0.805+r    widths(1)    heights(1) ]; %  ICA weights/rank
+    
+
+  %% New Buttons to navigate identified marks
+
+  posbut(70,:) = [ bottoms(1)    0.48+r    widths(3)    heights(1) ]; %  ICA weights/rank tag
+  posbut(71,:) = [ bottoms(6)    0.48+r    widths(3)    heights(1) ]; %  ICA weights/rank
 
 %% Epoch editbox, arrows, scale size, number of channels display
 
@@ -1369,6 +1375,14 @@ end
   u(30) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(30,:),'Style','text','FontSize',8,...
 	'Tag','Count_Channels','BackgroundColor',DEFAULT_FIG_COLOR,'string','');
 
+%% arrows to move between marked winrej
+
+  u(70) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(70,:),'Style','pushbutton','FontSize',8,...
+	'Tag','GoBackWinrej','BackgroundColor',DEFAULT_FIG_COLOR,'string','<','Callback',{@draw_data,figh,11,[],[],ax1});
+
+  u(71) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(71,:),'Style','pushbutton','FontSize',8,...
+	'Tag','GoForwardWinrej','BackgroundColor',DEFAULT_FIG_COLOR,'string','>','Callback',{@draw_data,figh,12,[],[],ax1});
+
 %% plot data difference checkbox
 
 % u(26)= uicontrol('Parent',figh, ...
@@ -1403,7 +1417,7 @@ end
 
   % NEW GO TO THE END #UGO
   u(47) = uicontrol('Parent',figh,'Units', 'normalized','Position',posbut(47,:), 'FontSize',8,...
-	'Tag','Pushbutton4','string','>|','Callback',{@draw_data,figh,7,[],[],ax1});
+	'Tag','Pushbutton5','string','>|','Callback',{@draw_data,figh,7,[],[],ax1});
 
 %% Channels, position, value and tag
 % Values of time/value and freq/power in GUI
@@ -2897,8 +2911,91 @@ function draw_data(varargin)
             data = g.data;
         case 10
             g.time = p2;
+        case 11 % go to previous winrej
+    if ~isempty(g.winrej)
+        if g.time > 0
+            % Convert current time to bins/samples
+            if g.trialstag(1) ~= -1  % epoched data
+                %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
+                % Adjust for epoch number
+                currentEpoch = floor(g.time);
+                currentBin = currentEpoch * g.EEG.pnts +1;
+            else  % continuous data
+                currentBin = round(g.time * g.EEG.srate);
+            end
+            
+            % Find the closest previous winrej
+            prevWinrej = [];
+            maxPrevBin = -1;
+            for i = 1:size(g.winrej, 1)
+                if g.winrej(i, 1) < currentBin && g.winrej(i, 1) > maxPrevBin
+                    g.winrej(i)
+                    prevWinrej = g.winrej(i, :);
+                    prevWinrej(1)
+                    maxPrevBin = g.winrej(i, 2);
+                end
+            end
+            
+            % If found, move to that winrej
+            if ~isempty(prevWinrej)
+                if g.trialstag(1) ~= -1  % epoched data
+                    % Convert bin back to epoch and latency
+                    targetEpoch = floor(prevWinrej(1) / g.EEG.pnts);
+                    targetLatency = mod(prevWinrej(1), g.EEG.pnts);
+                    % Ensure we start at the beginning of the epoch
+                    g.time = targetEpoch;
+                else  % continuous data
+                    g.time = prevWinrej(1) / g.EEG.srate;
+                    % Ensure we don't exceed frame limits
+                    if g.time > g.frames/g.EEG.srate
+                        g.time = g.frames/g.EEG.srate - g.winlength;
+                    end
+                end
+            end
+        end
     end
-    
+
+        case 12 % go to next winrej
+            if ~isempty(g.winrej)
+                % Convert current time to bins/samples
+                if g.trialstag(1) ~= -1  % epoched data
+                    %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
+                    % Adjust for epoch number
+                    currentEpoch = floor(g.time);
+                    currentBin = currentEpoch * g.EEG.pnts +1;
+                else  % continuous data
+                    currentBin = round(g.time * g.EEG.srate);
+                end
+
+                % Find the closest next winrej
+                nextWinrej = [];
+                minNextBin = inf;
+                for i = 1:size(g.winrej, 1)
+                    if g.winrej(i, 1) > currentBin && g.winrej(i, 1) < minNextBin
+                        nextWinrej = g.winrej(i, :);
+                        g.winrej(i)
+                        minNextBin = g.winrej(i, 1);
+                    end
+                end
+
+                % If found, move to that winrej
+                if ~isempty(nextWinrej)
+                    if g.trialstag(1) ~= -1  % epoched data
+                        % Convert bin back to epoch and latency
+                        targetEpoch = floor(nextWinrej(1) / g.EEG.pnts);
+                        % Set time to start of the epoch
+                        g.time = targetEpoch;
+                    else  % continuous data
+                        g.time = nextWinrej(1) / g.EEG.srate;
+                        % Ensure we don't exceed frame limits
+                        if g.time > g.frames/g.EEG.srate
+                            g.time = g.frames/g.EEG.srate - g.winlength;
+                        end
+                    end
+                end
+            end
+    end
+
     if g.trialstag ~= -1 % time in second or in trials
         multiplier = g.trialstag;
     else
@@ -6532,4 +6629,6 @@ g.events = tmpevents;
   eegplot_adv('drawp', 0);
 
   %draw_data([],[],fig,9,[],g);
+
+
 
