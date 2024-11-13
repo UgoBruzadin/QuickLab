@@ -4100,6 +4100,121 @@ if nargin > 3
 end
 catch return; end
 
+
+
+function g = normalize_chan_noplot(~,g,fig)
+
+%g = get(fig,'userdata');
+if g.normed
+    disp('Denormalizing...');
+else
+    disp('Normalizing...'); 
+end
+
+hmenu = findobj(fig, 'Tag', 'Normalize_menu');
+hbutton = findobj(fig, 'Tag', 'Norm');
+ax2 = findobj('tag','backeeg','parent',fig);
+ax1 = findobj('tag','eegaxis','parent',fig);
+data = get(ax1,'UserData');
+
+EEG = g.EEG;
+
+% if EEG.plotchannels == 1
+%     g.datastd = std(EEG.data(:,1:min(1000,g.frames)),[],2); 
+% else
+%     g.datastd = std(EEG.icaact(:,1:min(1000,g.frames)),[],2); 
+% end
+
+ if isempty(g.datastd) %|| size(g.data,1) ~= size(g.datastd,1)
+%     data(:,1:min(1000,g.frames));
+     g.datastd = std(data(:,1:min(1000,g.frames)),[],2); 
+ end
+
+%     if ~isfield(g,'oldspacing')
+%         g.oldspacing = 0;
+%     end
+if g.normed == 1
+    for i = 1:size(data,1)
+        
+        data(i,:,:) = data(i,:,:)*g.datastd(i);
+        
+        if ~isempty(g.data2)
+            g.data2(i,:,:) = g.data2(i,:,:)*g.datastd(i);
+        end
+    end
+    set(hbutton,'string', 'Norm');
+    try set(findobj('tag','ESpacing','parent',fig),'string',num2str(g.oldspacing)); catch; end
+else
+    g.datastd = std(data(:,1:min(1000,g.frames)),[],2); 
+    
+    % because of interpolation, a few channels std will be 0, which makes
+    % bizarre data display. This substitute the chanel std for the avg std of
+    % all channels
+    
+    if any(g.datastd < 0.001)
+       g.datastd(find(g.datastd < 0.001)) = mean(g.datastd);
+    end
+
+    for i = 1:size(data,1)
+        
+        data(i,:,:) = data(i,:,:)/g.datastd(i);
+        if ~isempty(g.data2)
+            g.data2(i,:,:) = g.data2(i,:,:)/g.datastd(i);
+        end
+    end
+    set(hbutton,'string', 'Denorm');
+    g.oldspacing = g.spacing;
+end
+
+g.normed = 1 - g.normed;
+%change_scale([],[],fig,0,ax1);
+set(hmenu, 'Label', fastif(g.normed,'Denormalize channels','Normalize channels'));
+%set(fig,'userdata',g);
+%set(ax1,'UserData',data);
+%eegplot_adv('setelect');
+%draw_data([],[],fig,0,[],g,ax1);
+
+disp('Done.');
+
+function g = normalize_chan_justdata(g)
+    % NORMALIZE_CHAN Normalize or denormalize g.data based on g.normed status.
+    %
+    % This function operates solely on the g.data field without figure properties.
+    
+    if g.normed
+        disp('Denormalizing...');
+        % Denormalize data by multiplying each channel by its original standard deviation
+        for i = 1:size(g.data, 1)
+            g.data(i, :, :) = g.data(i, :, :) * g.datastd(i);
+            if ~isempty(g.data2)
+                g.data2(i, :, :) = g.data2(i, :, :) * g.datastd(i);
+            end
+        end
+        g.normed = 0; % Set normalized flag to false
+    else
+        disp('Normalizing...');
+        
+        % Calculate standard deviation of data if not already set
+        if isempty(g.datastd) || size(g.data, 1) ~= size(g.datastd, 1)
+            g.datastd = std(g.data(:, 1:min(1000, g.frames)), [], 2);
+        end
+
+        % Handle cases where std is near zero (replace with average std to avoid anomalies)
+        if any(g.datastd < 0.001)
+            g.datastd(g.datastd < 0.001) = mean(g.datastd);
+        end
+        
+        % Normalize data by dividing each channel by its standard deviation
+        for i = 1:size(g.data, 1)
+            g.data(i, :, :) = g.data(i, :, :) / g.datastd(i);
+            if ~isempty(g.data2)
+                g.data2(i, :, :) = g.data2(i, :, :) / g.datastd(i);
+            end
+        end
+        g.normed = 1; % Set normalized flag to true
+    end
+
+
 function normalize_chan(~,~,fig)
 
 g = get(fig,'userdata');
@@ -4996,25 +5111,24 @@ function g = SWITCH(g)
 
 % THIS FUNCTION SWITCH BETWEEN EEG DATA AND ICA DATA
 
-    g = get(gcf,'UserData');% Get data from figure
-    if ~isempty(g.EEG.icawinv) %
+    g = get(gcf,'UserData'); % Get data from figure
+    if ~isempty(g.EEG.icawinv)
 
         EEG = g.EEG;
         ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
 
         if g.EEG.plotchannels == 1
-            g.EEG.plotchannels = 0; % Change the variable that stores whether is ICA or EEG
+            g.EEG.plotchannels = 0; % Change the variable that stores whether it is ICA or EEG
 
-            % Store backups of the important variables
-            
+            % Store backups of the important variables for EEG mode
             g.eloc_file_ch = g.eloc_file;
             g.datastd_ch = g.datastd;
             g.normed_ch = g.normed;
             g.winrej_ch = g.winrej;
             g.data_ch = g.data;
-            
-            % Collect the ICA/PCA variables
+            g.spacing_ch = g.spacing; % Store current spacing for EEG mode
 
+            % Collect the ICA/PCA variables
             g.eloc_file = g.eloc_file_pc;
             g.datastd = g.datastd_pc;
             g.normed = g.normed_pc;
@@ -5028,27 +5142,22 @@ function g = SWITCH(g)
             end
             g.chans = size(EEG.icaact,1);
 
-            % Change normed to default
-            g.normed = 0;
+            % Restore the last-used spacing for ICA mode
+            g.spacing = g.spacing_pc; % Restore stored spacing for ICA mode
+            try set(findobj('tag','ESpacing','parent',gcf),'string',num2str(g.spacing)); catch; end
+            fprintf('Showing ICA data \n');
 
-            hbutton = findobj(gcf, 'Tag', 'Norm');
-            set(hbutton,'string', 'Norm');
-            
-            g.spacing = 0;
-            g = optim_scale(g.data,g); % not sure what it does
-
-            fprintf('Showing ICA data \r');
         else
             g.EEG.plotchannels = 1;
 
-            % Store backups of the important variables
-
+            % Store backups of the important variables for ICA mode
             g.eloc_file_pc = g.eloc_file;
             g.datastd_pc = g.datastd;
             g.normed_pc = g.normed;
             g.winrej_pc = g.winrej;
             g.data_pc = g.data;
-            
+            g.spacing_pc = g.spacing; % Store current spacing for ICA mode
+
             % Collect the Channel variables
             g.eloc_file = g.eloc_file_ch;
             g.datastd = g.datastd_ch;
@@ -5058,31 +5167,31 @@ function g = SWITCH(g)
             g.data_ch = EEG.data;
             g.chans = EEG.nbchan;
 
-            g.normed = 0;
-            hbutton = findobj(gcf, 'Tag', 'Norm');
-            set(hbutton,'string', 'Norm');
-
-            g.spacing = 0;
-            g = optim_scale(g.data,g);
-          
-            %change_scale([],[],fig,2,ax2);
+            % Restore the last-used spacing for EEG mode
+            g.spacing = g.spacing_ch; % Restore stored spacing for EEG mode
+            try set(findobj('tag','ESpacing','parent',gcf),'string',num2str(g.spacing)); catch; end
             
-            fprintf('Showing EEG data \r');
+            fprintf('Showing EEG data \n');
         end
 
-        %g = THINKING(g,0);
-        %g.normed = 0;
-        %g = make_eloc_file(g);
-        %set(gcf,'Color',g.backcolor);
+        % Set updated data and settings in figure properties
         set(gcf,'UserData',g);
         set(ax1,'UserData',g.data);
 
-        draw_data([],[],gcf,9,[],g);
+%         if g.normed_pc ~= g.normed_ch
+%             g = normalize_chan_noplot([],g,gcf);
+%         end
 
+        % Redraw data with the new settings
+        
+        draw_data([],[],gcf,0,[],g); % 9 or 0, they may do the same thing
         eegplot_adv('winelec_auto');
         draw_matrix(g);
-        %change_scale(ax1,gcf,1);
+        change_scale(ax1,gcf,1);
+
     end
+
+
 
 function g = APPLY(g)
     QuickLabDefs;
