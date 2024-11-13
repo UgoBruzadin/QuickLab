@@ -900,6 +900,12 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
 
   posbut(68,:) = [ bottoms(2)    0.82+r    widths(1)    heights(1) ]; %  ICA weights/rank tag
   posbut(69,:) = [ bottoms(2)    0.805+r    widths(1)    heights(1) ]; %  ICA weights/rank
+    
+
+  %% New Buttons to navigate identified marks
+
+  posbut(70,:) = [ bottoms(1)    0.48+r    widths(3)    heights(1) ]; %  ICA weights/rank tag
+  posbut(71,:) = [ bottoms(6)    0.48+r    widths(3)    heights(1) ]; %  ICA weights/rank
 
 %% Epoch editbox, arrows, scale size, number of channels display
 
@@ -1213,36 +1219,36 @@ QuickLabDefs;
         'Detect Channel Pops (by Ugo)'];
     
     g.tbtoptions = {...
-        ['-150 , 150 ,' num2str(EEG.xmin) ' , ' num2str(EEG.xmax)],...
-        'low/up thresh, starttime, endtime',...
+        ['[1:57,59,60],-150 , 150 ,' num2str(EEG.xmin) ' , ' num2str(EEG.xmax)],...
+        'chans,low/up thresh, starttime, endtime',...
         'pop_eegthresh';...
         ...
-        [num2str(EEG.pnts) ' , 0.5 , 0.3'],...
-        'winsize, maxslope, minR',...
+        ['[1:57,59,60],',num2str(EEG.pnts) ' , 0.5 , 0.3'],...
+        'chans,winsize, maxslope, minR',...
         'pop_rejtrend';...
         ...
-        '3 , 3',...
-        'locthresh, globthresh',...
+        '[1:57,59,60],3 , 3',...
+        'chans,locthresh, globthresh',...
         'pop_jointprob';...
         ...
-        '3 , 3',...
-        'locthresh, globthresh',...
+        '[1:57,59,60],3 , 3',...
+        'chans,locthresh, globthresh',...
         'pop_rejkurt';...
         ...
-        ['''method'' , ''FFT'' , ''threshold'' , [-70 , 15] ,''freqlimits'' , [20 , 55]'],...
-        'th in Db, limits in Hz >34',...
+        ['[1:57,59,60],''method'' , ''FFT'' , ''threshold'' , [-70 , 15] ,''freqlimits'' , [20 , 55]'],...
+        'chans,th in Db, limits in Hz >34',...
         'pop_rejspec';...
         ...
-        ['[1:' num2str(EEG.nbchan) '],[' num2str([EEG.xmin EEG.xmax]*1000) '],100,' num2str([EEG.xmax - EEG.xmin]*1000) ',1,0'],...
-        'chRange,timeRange,minmaxThresh,winSize,stepSize,maW',...
+        ['[1:57,59,60],[1:' num2str(EEG.nbchan) '],[' num2str([EEG.xmin EEG.xmax]*1000) '],100,' num2str([EEG.xmax - EEG.xmin]*1000) ',1,0'],...
+        'chans,chRange,timeRange,minmaxThresh,winSize,stepSize,maW',...
         'pop_eegmaxmin';...
         ...
-        ['5, 20'],...
-        ['fl duration, max jitter'],...
+        ['[1:57,59,60],5, 20'],...
+        ['chans,fl duration, max jitter'],...
         '';...
         ...
-        ['{5, 8, 100, 2, [],''mean''}'],...
-        ['SumWindow, StdRej, max rej win, Chancomps, type'],...
+        ['[1:57,59,60],{5, 8, 100, 2, [],''mean''}'],...
+        ['chans,SumWindow, StdRej, max rej win, Chancomps, type'],...
         '';...
         };
 else
@@ -1307,7 +1313,7 @@ g.currentoptions = g.tbtoptions;
 	'Tag','TBT%','BackgroundColor',DEFAULT_PLOT_BACKGROUND,'string','60');
 
   u(39) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(39,:), 'Style','edit',...
-	'Tag','TBTnchans','BackgroundColor',DEFAULT_PLOT_BACKGROUND, 'string','10');	
+	'Tag','TBTnchans','BackgroundColor',DEFAULT_PLOT_BACKGROUND, 'string','1');	
 
   u(40) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(40,:), ...
     'Tag','TBT','BackgroundColor',DEFAULT_OFF_COLOR,'string','Run','Callback', 'eegplot_adv(''METHODS'');' );
@@ -1329,7 +1335,7 @@ g.scripts = ['BSS|' ...
         'Epoch|'...
         'Channel Reduction'];
 
-if g.EEG.plotchannels
+if g.EEG.plotchannels == 1
     cmodecolor = DEFAULT_ON_COLOR;
     cmode = 'Show ICA'; 
 else
@@ -1369,6 +1375,14 @@ end
   u(30) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(30,:),'Style','text','FontSize',8,...
 	'Tag','Count_Channels','BackgroundColor',DEFAULT_FIG_COLOR,'string','');
 
+%% arrows to move between marked winrej
+
+  u(70) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(70,:),'Style','pushbutton','FontSize',8,...
+	'Tag','GoBackWinrej','BackgroundColor',DEFAULT_FIG_COLOR,'string','<','Callback',{@draw_data,figh,11,[],[],ax1});
+
+  u(71) = uicontrol('Parent',figh,'Units', 'normalized','Position', posbut(71,:),'Style','pushbutton','FontSize',8,...
+	'Tag','GoForwardWinrej','BackgroundColor',DEFAULT_FIG_COLOR,'string','>','Callback',{@draw_data,figh,12,[],[],ax1});
+
 %% plot data difference checkbox
 
 % u(26)= uicontrol('Parent',figh, ...
@@ -1403,7 +1417,7 @@ end
 
   % NEW GO TO THE END #UGO
   u(47) = uicontrol('Parent',figh,'Units', 'normalized','Position',posbut(47,:), 'FontSize',8,...
-	'Tag','Pushbutton4','string','>|','Callback',{@draw_data,figh,7,[],[],ax1});
+	'Tag','Pushbutton5','string','>|','Callback',{@draw_data,figh,7,[],[],ax1});
 
 %% Channels, position, value and tag
 % Values of time/value and freq/power in GUI
@@ -2084,7 +2098,7 @@ else
     
     h = findobj(fig, 'tag', 'SWITCH');
     if ~isempty(g.EEG.icawinv)
-        if g.EEG.plotchannels
+        if g.EEG.plotchannels == 1
             %set(h,'string','EEG data ON');
             set(h,'string','Show ICA');
             set(h, 'BackGroundColor', DEFAULT_ON_COLOR);
@@ -2897,8 +2911,91 @@ function draw_data(varargin)
             data = g.data;
         case 10
             g.time = p2;
+        case 11 % go to previous winrej
+    if ~isempty(g.winrej)
+        if g.time > 0
+            % Convert current time to bins/samples
+            if g.trialstag(1) ~= -1  % epoched data
+                %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
+                % Adjust for epoch number
+                currentEpoch = floor(g.time);
+                currentBin = currentEpoch * g.EEG.pnts +1;
+            else  % continuous data
+                currentBin = round(g.time * g.EEG.srate);
+            end
+            
+            % Find the closest previous winrej
+            prevWinrej = [];
+            maxPrevBin = -1;
+            for i = 1:size(g.winrej, 1)
+                if g.winrej(i, 1) < currentBin && g.winrej(i, 1) > maxPrevBin
+                    g.winrej(i)
+                    prevWinrej = g.winrej(i, :);
+                    prevWinrej(1)
+                    maxPrevBin = g.winrej(i, 2);
+                end
+            end
+            
+            % If found, move to that winrej
+            if ~isempty(prevWinrej)
+                if g.trialstag(1) ~= -1  % epoched data
+                    % Convert bin back to epoch and latency
+                    targetEpoch = floor(prevWinrej(1) / g.EEG.pnts);
+                    targetLatency = mod(prevWinrej(1), g.EEG.pnts);
+                    % Ensure we start at the beginning of the epoch
+                    g.time = targetEpoch;
+                else  % continuous data
+                    g.time = prevWinrej(1) / g.EEG.srate;
+                    % Ensure we don't exceed frame limits
+                    if g.time > g.frames/g.EEG.srate
+                        g.time = g.frames/g.EEG.srate - g.winlength;
+                    end
+                end
+            end
+        end
     end
-    
+
+        case 12 % go to next winrej
+            if ~isempty(g.winrej)
+                % Convert current time to bins/samples
+                if g.trialstag(1) ~= -1  % epoched data
+                    %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
+                    % Adjust for epoch number
+                    currentEpoch = floor(g.time);
+                    currentBin = currentEpoch * g.EEG.pnts +1;
+                else  % continuous data
+                    currentBin = round(g.time * g.EEG.srate);
+                end
+
+                % Find the closest next winrej
+                nextWinrej = [];
+                minNextBin = inf;
+                for i = 1:size(g.winrej, 1)
+                    if g.winrej(i, 1) > currentBin && g.winrej(i, 1) < minNextBin
+                        nextWinrej = g.winrej(i, :);
+                        g.winrej(i)
+                        minNextBin = g.winrej(i, 1);
+                    end
+                end
+
+                % If found, move to that winrej
+                if ~isempty(nextWinrej)
+                    if g.trialstag(1) ~= -1  % epoched data
+                        % Convert bin back to epoch and latency
+                        targetEpoch = floor(nextWinrej(1) / g.EEG.pnts);
+                        % Set time to start of the epoch
+                        g.time = targetEpoch;
+                    else  % continuous data
+                        g.time = nextWinrej(1) / g.EEG.srate;
+                        % Ensure we don't exceed frame limits
+                        if g.time > g.frames/g.EEG.srate
+                            g.time = g.frames/g.EEG.srate - g.winlength;
+                        end
+                    end
+                end
+            end
+    end
+
     if g.trialstag ~= -1 % time in second or in trials
         multiplier = g.trialstag;
     else
@@ -3676,7 +3773,7 @@ QuickLabDefs;
 %get(fig, 'SelectionType') % prints what selection has been done
 if strcmp(get(fig, 'SelectionType'),'extend')
     
-    if g.EEG.plotchannels
+    if g.EEG.plotchannels == 1
         plot_topoplot_CHANNEL(fig,{'v'})
     else
         eegplot_adv('topoplot', fig);
@@ -5015,7 +5112,7 @@ function g = APPLY(g)
     
     EEG.save = 1;
     EEG.ICA = 0;
-    if g.EEG.plotchannels
+    if g.EEG.plotchannels == 1
         g.winrej_ch = g.winrej;
         applycom_ch = 'NEW=EEG;[NEW LASTCOM1] = eeg_eegrej_adv(NEW,g.winrej,1,find([g.eloc_file.badchan])); ' ; %modified for eegrej2
         eval(applycom_ch);
@@ -5412,6 +5509,16 @@ function g = REDO(g)
         nbadchans = findobj(gcf,'tag', 'TBTnchans');
         pctbadtrial = findobj(gcf,'tag', 'TBT%');
         
+        splits = split(options.String,']');
+        if ~isempty(eval(strcat(splits{1},']')))
+            chancomps = strcat(splits{1},']');
+        end
+
+
+        first_comma = strfind(options(1).String,']');
+        all_options = options(1).String(first_comma(1)+2:end);
+
+        
         switch method(1).Value
 
             case 7
@@ -5420,26 +5527,26 @@ function g = REDO(g)
                 update_trial_rejections(g);
                 return;
             case 1
-                comrej  = ['EEG = pop_eegthresh(EEG, ' icacomp ',' chancomps ',' options(1).String ', 1, 0);'];
+                comrej  = ['EEG = pop_eegthresh(EEG, ' icacomp ',' chancomps ',' all_options ', 1, 0);'];
                 chosen_func    = 'rejthreshE';
             case 2
-                comrej  = ['[EEG, comrej] = pop_rejtrend(EEG, ' icacomp ', ' chancomps ',' options(1).String ', 1, 0,0);'];
+                comrej  = ['[EEG, comrej] = pop_rejtrend(EEG, ' icacomp ', ' chancomps ',' all_options ', 1, 0,0);'];
                 chosen_func    = 'rejconstE';
             case 3
-                comrej  = ['[EEG, ~,~,~,comrej] = pop_jointprob(EEG, ' icacomp ', ' chancomps ',' options(1).String ', 1, 0, 0);'];
+                comrej  = ['[EEG, ~,~,~,comrej] = pop_jointprob(EEG, ' icacomp ', ' chancomps ',' all_options ', 1, 0, 0);'];
                 chosen_func    = 'rejjpE';
             case 4
-                comrej  = ['[EEG, ~,~,~,comrej] = pop_rejkurt(EEG, ' icacomp ', ' chancomps ',' options(1).String ', 1, 0, 0);'];
+                comrej  = ['[EEG, ~,~,~,comrej] = pop_rejkurt(EEG, ' icacomp ', ' chancomps ',' all_options ', 1, 0, 0);'];
                 chosen_func    = 'rejkurtE';
             case 5
-                comrej  = ['[EEG, ~, comrej]    = pop_rejspec(EEG, ' icacomp ',' options(1).String , ',''elecrange'',' chancomps ');'];
+                comrej  = ['[EEG, ~, comrej]    = pop_rejspec(EEG, ' icacomp ',' all_options , ',''elecrange'',' chancomps ');'];
                 chosen_func    = 'rejfreqE';
             case 6
-                comrej  = ['[EEG, comrej]    = pop_eegmaxmin(EEG,' options(1).String ');'];
+                comrej  = ['[EEG, comrej]    = pop_eegmaxmin(EEG,' all_options ');'];
                 chosen_func    = 'rejmaxminE';
                 ica = ''; %rejmaxminE doesn't have options for ICA
             case 8
-                comrej = ['[EEG,comrej] = pop_eegchannelpop(EEG,' icacomp ',' chancomps ',' options(1).String ');'];
+                comrej = ['[EEG,comrej] = pop_eegchannelpop(EEG,' icacomp ',' chancomps ',' all_options ');'];
                 chosen_func = 'rejchanpops';
         end
         
@@ -6532,4 +6639,6 @@ g.events = tmpevents;
   eegplot_adv('drawp', 0);
 
   %draw_data([],[],fig,9,[],g);
+
+
 
