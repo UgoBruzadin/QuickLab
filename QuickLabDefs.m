@@ -25,8 +25,7 @@ SAVEBACKUP = 1;
 %% EEGPLOT_ADV DEFAULTS
 EEGTHRESHOLD = [-150, 150];
 ALLBUTBRAIN = [0.8, 1] ;
-
-
+CHANNELDEFS = [1:57,59,60];
 
 %% SPECTOPO DISPLAY DEFAULTS
 % Highest Frequency, Lowest Frequency, Maxwindow
