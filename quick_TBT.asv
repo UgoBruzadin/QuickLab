@@ -24,7 +24,12 @@ function EEG = quick_TBT(EEG,plotchannels,method,options,nbadchans,pctbadtrial)
 
 % storing old data
 EEGpre = EEG;
-winrejPRE = EEG.winrej;
+if isfield(EEG,'winrej')
+    winrejPRE = EEG.winrej;
+else
+    EEG.winrej = [];
+    winrejPRE = [];
+end
 
 if plotchannels ~= 1
     icacomp = '0';
@@ -85,19 +90,19 @@ winrej = EEG.reject.(strcat(ica,chosen_func)); % Gets rejected data into winrej
 %% Find bad trials and channels
 
 % Find channels that have been marked as bad in more than X% of trials:
-channel_index = sum(winrej,2)/EEG.trials >= str2double(pctbadtrial)/100;   % boolean list
+channel_index = sum(winrej,2)/EEG.trials >= pctbadtrial/100;   % boolean list
 
-if ~isfield(EEG.eloc_file, 'badchan')
-    for ii=1:length(EEG.eloc_file)
-        EEG.eloc_file(ii).badchan = 0;
+%if ~isfield(EEG.chanlocs, 'badchan')
+    for ii=1:length(EEG.chanlocs)
+        EEG.chanlocs(ii).badchan = 0;
     end
-end
+%end
 
 % Collects rejected trials BUG
 if sum(channel_index)
     badchannels = find(channel_index);
     for ind = badchannels'
-        EEG.eloc_file(ind).badchan = 1; % marks channels as bad
+        EEG.badchans = 1; % marks channels as bad
         % removes these channels from trial rejections!
         winrej(ind,:) = 0;
     end
@@ -105,7 +110,7 @@ end
 
 % Find trial with more than X bad channels:
 trials_ind  = 1:EEG.trials;
-bTrial_ind  = sum(winrej,1) >= str2double(nbadchans(1).String);     % boolean list
+bTrial_ind  = sum(winrej,1) >= nbadchans;     % boolean list
 bTrial_num  = trials_ind(bTrial_ind);	% trial list
 nbadtrial   = length(bTrial_num);       % count bad trials
 
