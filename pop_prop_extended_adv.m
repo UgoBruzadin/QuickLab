@@ -352,6 +352,41 @@ else % continuoous data
 end
 catch
 end
+
+% Assuming `EEG`, `ic_index` (selected component), and GUI figure are defined
+
+% Step 1: Calculate variance for the selected component
+ic_index = chanorcomp; % Example component number
+ic_weights = EEG.icawinv(:, ic_index);
+channel_variance = ic_weights .^ 2;
+percent_variance = 100 * (channel_variance / sum(channel_variance));
+
+% Step 2: Sort variances from highest to lowest
+[sorted_variance, sorted_indices] = sort(percent_variance, 'descend');
+channel_list = arrayfun(@(ch, var) sprintf('Channel %d: %.2f%%', ch, var), ...
+                        sorted_indices, sorted_variance, 'UniformOutput', false);
+
+% Convert cell array to a single string with newline separation
+variance_text = strjoin(channel_list, '\n');
+
+% Step 3: Create scrollable text box in GUI
+% Adjust `position` as needed to fit within your GUI layout
+scrollable_box = uicontrol('Style', 'edit', ...
+                           'Max', 2, 'Min', 0, ...       % Enable multiline
+                           'String', variance_text, ...  % Display sorted variances
+                           'HorizontalAlignment', 'left', ...
+                           'Position', [400, 20, 100, 80], ...  % x, y, width, height
+                           'FontSize', 10, ...
+                           'BackgroundColor', [1 1 1], ...
+                           'Enable', 'inactive');  % Disable editing
+
+% Enable scrolling
+%jScroll = findjobj(scrollable_box);  % Uses `findjobj` for Java-based scrolling
+%jScrollbox = jScroll.getViewport;
+%jScrollbox.setVerticalScrollBarPolicy(jScrollbox.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+
+
 if exist('axhndls', 'var')
     try
         % 2014+
