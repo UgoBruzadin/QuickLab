@@ -353,6 +353,9 @@ end
 catch
 end
 
+
+
+%% Added in 2024: Display box with % per channel
 % Assuming `EEG`, `ic_index` (selected component), and GUI figure are defined
 
 % Step 1: Calculate variance for the selected component
@@ -380,12 +383,29 @@ scrollable_box = uicontrol('Style', 'edit', ...
                            'BackgroundColor', [1 1 1], ...
                            'Enable', 'inactive');  % Disable editing
 
-% Enable scrolling
-%jScroll = findjobj(scrollable_box);  % Uses `findjobj` for Java-based scrolling
-%jScrollbox = jScroll.getViewport;
-%jScrollbox.setVerticalScrollBarPolicy(jScrollbox.VERTICAL_SCROLLBAR_AS_NEEDED);
+if ic_index < 1 || ic_index > size(EEG.icaact, 1)
+    error('Component index out of bounds');
+end
 
+% Step 1: Calculate variance per trial for the specified component
+trial_variances = squeeze(var(EEG.icaact(ic_index, :, :), [], 2)); % (1 x trials)
 
+% Step 2: Sort variances in descending order and compute cumulative variance
+sorted_variances = sort(trial_variances, 'descend');
+cumulative_variance = cumsum(sorted_variances);
+
+% Step 3: Calculate 90% of the total variance
+total_variance = sum(sorted_variances);
+threshold = 0.50 * total_variance;
+
+% Step 4: Find the number of trials needed to reach 90% variance
+trials_needed = find(cumulative_variance >= threshold, 1);
+
+% Display the result in a pop_prop_adv-like format
+%fprintf('Component %d requires %d trials to reach 90%% of its total variance.\n', ic_index, trials_needed);
+
+text(0.5, 1.145, {[sprintf('%d trials to reach 50%% of its total variance.', trials_needed)]}, ...
+        'fontsize', 13,'Units','Normalized', 'HorizontalAlignment', 'center','Color',DEFAULT_AXIS_COLOR);
 
 if exist('axhndls', 'var')
     try
