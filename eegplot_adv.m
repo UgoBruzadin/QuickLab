@@ -5174,9 +5174,17 @@ function g = SWITCH(g)
             fprintf('Showing EEG data \n');
         end
 
+        g.normed = 0;
+        hmenu = findobj(gcf, 'Tag', 'Normalize_menu');
+        hbutton = findobj(gcf, 'Tag', 'Norm');
+        
+        
+        set(hbutton, 'string', fastif(g.normed,'Denorm','Norm'));
+        %set(hmenu, 'string', fastif(g.normed,'Denormalize channels','Normalize channels'));
         % Set updated data and settings in figure properties
         set(gcf,'UserData',g);
         set(ax1,'UserData',g.data);
+        
 
 %         if g.normed_pc ~= g.normed_ch
 %             g = normalize_chan_noplot([],g,gcf);
@@ -5184,7 +5192,7 @@ function g = SWITCH(g)
 
         % Redraw data with the new settings
         
-        draw_data([],[],gcf,0,[],g); % 9 or 0, they may do the same thing
+        draw_data([],[],gcf,9,[],g); % 9 or 0, they may do the same thing
         eegplot_adv('winelec_auto');
         draw_matrix(g);
         change_scale(ax1,gcf,1);
