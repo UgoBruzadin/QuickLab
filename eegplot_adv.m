@@ -5659,8 +5659,13 @@ function g = REDO(g)
                 comrej  = ['[EEG, ~, comrej]    = pop_rejspec(EEG, ' icacomp ',' all_options , ',''elecrange'',' chancomps ');'];
                 chosen_func    = 'rejfreqE';
             case 6
-                comrej  = ['[EEG, comrej]    = pop_eegmaxmin(EEG,' all_options ');'];
-                chosen_func    = 'rejmaxminE';
+                if EEG.plotchannels ~= 1
+                    comrej  = ['[EEG, comrej]    = pop_eegmaxmin_ica(EEG,' all_options ');'];
+                    chosen_func    = 'rejmaxminICA';
+                else
+                    comrej  = ['[EEG, comrej]    = pop_eegmaxmin(EEG,' all_options ');'];
+                    chosen_func    = 'rejmaxminE';
+                end
                 ica = ''; %rejmaxminE doesn't have options for ICA
             case 8
                 comrej = ['[EEG,comrej] = pop_eegchannelpop(EEG,' icacomp ',' chancomps ',' all_options ');'];
