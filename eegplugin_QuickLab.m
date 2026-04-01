@@ -24,7 +24,15 @@
 function vers = eegplugin_QuickLab(fig, try_strings, catch_strings)
 
 vers = 0.91;
-% --- QuickLab sumermenu placeholder
+
+% --- Add QuickLab subdirectories to MATLAB path
+pluginDir = fileparts(which('eegplugin_QuickLab'));
+addpath(fullfile(pluginDir, 'gui'));
+addpath(fullfile(pluginDir, 'processing'));
+addpath(fullfile(pluginDir, 'visualization'));
+addpath(fullfile(pluginDir, 'utils'));
+
+% --- QuickLab supermenu placeholder
 supermenu = uimenu(fig, 'label', 'QuickLab');
 
 % --- Call QuickLab DEFS
