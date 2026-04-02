@@ -47,14 +47,23 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 % THE POSSIBILITY OF SUCH DAMAGE.
 
-function [EEGOUT, com] = eeg_eegrej_adv( EEG, regions, chanorcomp, tmprej);
+function [EEGOUT, com] = eeg_eegrej_adv( EEG, regions, chanorcomp, tmprej)
+
+if nargin < 2
+    help eeg_eegrej;
+    return;
+end
+if nargin < 3
+    chanorcomp = 1;
+end
+if nargin < 4
+    tmprej = 0;
+end
+
+QuickLabDefs;
 
 setname = EEG.setname;
 com = '';
-
-if nargin < 3
-    tmprej = 0;
-end
 
 %% ---- this code has been depricated, but kept in for compatibility sake
 if ~isfield(EEG,'myVariables')
@@ -108,27 +117,13 @@ else
 end
 
 %% --- STORE CURRENT MARKS TO FILE
-%[EEG] = pop_saveset(EEG, 'filepath',EEG.filepath);
-%if SAVEBACKUP == 'YES' %, save
-    [EEG] = pop_saveset(EEG, 'filename', [strcat( EEG.filename(1:end-4),'s','.set')],'filepath',EEG.filepath);
-%end
+if SAVEBACKUP
+    [~, fname, ~] = fileparts(EEG.filename);
+    [EEG] = pop_saveset(EEG, 'filename', [fname 's.set'], 'filepath', EEG.filepath);
+end
 EEG.myVariables = {};
-EEG.filename(1:end-4);
-%[EEG] = eeg_store(EEG); 
-%eeglab redraw; %save set ADDED BY UGO
 
 %% --- start organizing variables
-%com = '';
-if nargin < 2
-    help eeg_eegrej;
-    return;
-end
-if nargin< 3
-    probadded = [];
-    [compOrChan chanliststr] = pop_chansel( { EEG.chanlocs.labels } );
-    %channels = inputdlg('choose which of channels to interpolate');
-    %channels = str2num(channels{1});
-end
 if isempty(regions)
     %regions = [1,EEG.pnts*EEG.trials,0];
     %return;
@@ -174,34 +169,21 @@ regions_for_rej = [];
 rejcounter = 0;
 
 %% DISTRIBUTES REGIONS into reds (for removal) and greens (for interpolation)
-% --- remove the rejection data from regions_for interp with not-green color and add it to
-% ---- the variable regions_for_rej
-if ~isempty(regions) % if regions are not empty
-    for i=1:size(regions,1) % for the size of regions selected
-       %if IS ~RED~            AND NOT ~GREEN~ OR ~WHITE~ 
-        if regions(i,3) > regions(i,4) && regions(i,4) ~= [1]       % check for red color (3) and not of interpolation
-            regions_for_interp(i-rejcounter,:) = [];        % removes from interpolation
-            rejcounter = rejcounter + 1;                    % adds a counter for number of regions to reject
-            regions_for_rej(rejcounter,:) = regions(i,:);   % adds region to rejection
-        end
-    end
-end
+if ~isempty(regions) && size(regions,2) >= 4
+    % Red regions: col 3 > col 4 and col 4 ~= 1 (rejection)
+    is_red   = regions(:,3) > regions(:,4) & regions(:,4) ~= 1;
+    % White regions: col 3 == 1 and col 4 == 1 (no action)
+    is_white = regions(:,3) == 1 & regions(:,4) == 1;
+    % Green regions: everything else (interpolation)
+    is_green = ~is_red & ~is_white;
 
-% --- remove the non-rejection data from regions_for interp with not-white color
-if ~isempty(regions)
-    for i=1:size(regions,1)
-       %if IS ~WHITE~ 
-        if regions(i,4) == [1] && regions(i,3) == [1]       % check for white painted regions
-            regions_for_interp(i-rejcounter,:) = [];        % removes from interpolation
-            %rejcounter = rejcounter + 1;                   % doesnt need
-            %regions_for_rej(rejcounter,:) = regions(i,:);  % doesnt need
-        end
-    end
+    regions_for_rej    = regions(is_red, :);
+    regions_for_interp = regions(is_green, :);
 end
 
 %% --- Distributes channels or components for removal and channels for interpolation
 chancounter = 0;
-if ~isempty(regions_for_interp)                                  % if regions are not empty
+if ~isempty(regions_for_interp) && size(regions_for_interp,2) >= 6
     for i=1:size(regions_for_interp,1)                           % for the size of regions selected
         % --- finds the number of all channels rejected in this region
         channels = find(regions_for_interp(i-chancounter,6:end));
@@ -211,7 +193,7 @@ if ~isempty(regions_for_interp)                                  % if regions ar
         if any(rejboll)
             channels = channels(~rejboll);          %new bug fixed: removes channels/comps selected for full interpolation #was doubledipping!!!
         end
-        if channels ~= 0
+        if ~isempty(channels)
             if ~isempty(list_of_chans_or_comps)
                 list_of_chans_or_comps = strcat(list_of_chans_or_comps,';');
             end
@@ -243,9 +225,7 @@ end
 %% Partial Channel or Component Interpolations
 
 % --- fully interpolate channels or remove components selected (Ugo)
-EEGOG = EEG;
 EEGmod = EEG;
-EEGinterp = EEG;
 EEGcumulative = EEG;
 
 if ~isempty(list_of_chans_or_comps)
@@ -338,7 +318,7 @@ EEGmod2 = EEGcumulative;
 if ~isempty(chansorcomps4removal)
     % editing suffix 
     chansorcomps4removalstr = chansorcomps4removal;
-    try replace(chansorcomps4removalstr,divisors,'-'); catch; end
+    try chansorcomps4removalstr = replace(chansorcomps4removalstr,divisors,'-'); catch; end
     suf = replace(num2str(chansorcomps4removalstr),' ','-');
         
     if isstring(chansorcomps4removal)
@@ -359,9 +339,9 @@ end
 %% --- For plotting the data difference, mostly a debugging tool
 
 if plotdiff == 1
-    EEGdiff = EEGOG.data - EEGmod2.data;
-    eegplot_w2( EEGdiff, 'srate', EEGOG.srate, 'title', [ 'DIFFERENCE PRE AND POST CHANNEL/COMPONENT INTERPOLATION -- eegplot_w(): ' EEGOG.setname], ...
-        'limits', [EEGOG.xmin EEGOG.xmax]*1000 )% , 'command', command, eegplotoptions{:}, varargin{:});
+    EEGdiff = EEG.data - EEGmod2.data;
+    eegplot_w2( EEGdiff, 'srate', EEG.srate, 'title', [ 'DIFFERENCE PRE AND POST CHANNEL/COMPONENT INTERPOLATION -- eegplot_w(): ' EEG.setname], ...
+        'limits', [EEG.xmin EEG.xmax]*1000 );
 end
 
 %final EEG!
@@ -403,14 +383,7 @@ if ~isempty(regions_for_rej)
     end
 end
 
-try EEGOUT.suffix = replace(EEGOUT.suffix,'  ','-'); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,'--','-'); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,'--','-'); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,'-',''); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,'-',''); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,';',''); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,';',''); catch; end
-try EEGOUT.suffix = replace(EEGOUT.suffix,';',''); catch; end
+try EEGOUT.suffix = regexprep(EEGOUT.suffix, '[;\s-]+', ''); catch; end
 
 %% --- Save file
 if isfield(EEGOUT,'save')
@@ -421,9 +394,8 @@ if isfield(EEGOUT,'save')
 
         ss = EEGOUT.suffix;
         EEGOUT.suffix = [];
-        EEGOUT = pop_saveset(EEGOUT, 'filename', [strcat( EEGOUT.filename(1:end-4),ss,'.set')],'filepath',EEGOUT.filepath);
-        %EEGOUT.suffix = [];
-        EEGOUT.filename(1:end-4)
+        [~, fname, ~] = fileparts(EEGOUT.filename);
+        EEGOUT = pop_saveset(EEGOUT, 'filename', [fname ss '.set'], 'filepath', EEGOUT.filepath);
         if isfield(EEGOUT,'ICA')
             if EEGOUT.ICA == 1
             [EEGOUT,~] = quick_PCA(EEGOUT,[],[],0);
@@ -437,10 +409,9 @@ if isfield(EEGOUT,'save')
         %eval(get(findobj('tag','LoadPost'),'Callback'));
     end
 end
-% sends com to eegh?
+com = sprintf('EEGOUT = eeg_eegrej_adv( EEG, %s );', vararg2str({ regions, chanorcomp, tmprej }));
 global ALLCOM
-
-ALLCOM{end+1} = {sprintf('EEGOUT = eeg_eegrej_adv( EEG, %s );', vararg2str({ regions, chanorcomp, tmprej }))};
+ALLCOM{end+1} = com;
 
 
 

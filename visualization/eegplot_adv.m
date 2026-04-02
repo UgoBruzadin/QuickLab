@@ -316,7 +316,7 @@ if isstruct(EEG)
     if EEG.plotchannels == 1
         data = EEG.data;
     else
-        if ~isempty(EEG.icaact)
+        if isempty(EEG.icaact)
             data = eeg_getdatact(EEG, 'component', [1:size(EEG.icaweights,1)]);
         else
             data = EEG.icaact;
@@ -1993,8 +1993,9 @@ else
     if ~contains(fig.Tag,'topo')
         allfigs = findobj('type','figure');
         for i=1:length(allfigs)
-            if contains(fig.Tag,'topo')
+            if contains(allfigs(i).Tag,'topo')
                 fig = allfigs(i);
+                break;
             end
         end
     end
@@ -2063,8 +2064,8 @@ else
        end
       
       suffix = get(findobj(fig,'tag','SaveNowText'),'string');
-      EEG.filename(1:end-4)
-      [EEG] = pop_saveset(EEG, 'filename', [strcat( EEG.filename(1:end-4),suffix,'.set')],'filepath',EEG.filepath);
+      [~, fname, ~] = fileparts(EEG.filename);
+      [EEG] = pop_saveset(EEG, 'filename', [fname suffix '.set'], 'filepath', EEG.filepath);
 
       set(findobj(fig,'tag','SaveNowText'),'String','');
 
@@ -2151,7 +2152,7 @@ else
       draw_background
       eegplot_adv('drawp',0);
 
-  case 'QUICKLAB'     
+  case 'QUICKLAB'
       g = get(fig,'UserData');
       g = QUICKLAB(g);
       ax2 = findobj('tag','eegaxis','parent',fig);
@@ -2160,9 +2161,12 @@ else
         eegplot_adv('SWITCH');
         g.eloc_file = g.eloc_file_pc;
     else
-        for i = comps
-            g.eloc_file(i).badchan = 1;
-        end
+        try
+            badcomps = find([g.eloc_file.badchan]);
+            for i = badcomps
+                g.eloc_file(i).badchan = 1;
+            end
+        catch; end
     end
   
   case 'ICLABEL'
@@ -2299,7 +2303,6 @@ end
   case 'winelec'  % change channel window size
                   % get new window length with dialog box
                   % -------------------------------------
-   fig = fig;
    g = get(fig,'UserData');
    %g = THINKING(g,1);
    
@@ -2813,8 +2816,6 @@ function draw_data(varargin)
         figh = get(figh,'UserData');
     end
 
-    figh = findobj('tag','eegplot_adv');
-
     if nargin >= 4
         p1 = varargin{4};
         if ~isnumeric(p1)
@@ -2895,8 +2896,7 @@ function draw_data(varargin)
             else
                 g.time = (g.time - 1) * epoch;
             end
-        case 6
-        g.time = g.time;
+        case 6 % refresh (no time change)
         case 7 
             tmpEEG = g.EEG;
             epoch = abs(tmpEEG.xmin - tmpEEG.xmax);
@@ -2929,9 +2929,7 @@ function draw_data(varargin)
             maxPrevBin = -1;
             for i = 1:size(g.winrej, 1)
                 if g.winrej(i, 1) < currentBin && g.winrej(i, 1) > maxPrevBin
-                    g.winrej(i)
                     prevWinrej = g.winrej(i, :);
-                    prevWinrej(1)
                     maxPrevBin = g.winrej(i, 2);
                 end
             end
@@ -2973,7 +2971,6 @@ function draw_data(varargin)
                 for i = 1:size(g.winrej, 1)
                     if g.winrej(i, 1) > currentBin && g.winrej(i, 1) < minNextBin
                         nextWinrej = g.winrej(i, :);
-                        g.winrej(i)
                         minNextBin = g.winrej(i, 1);
                     end
                 end
@@ -3265,7 +3262,7 @@ end
 
 lowlim = round(g.time*multiplier+1);
 
-highlim = round(min((g.time+g.winlength)*multiplier+1));
+highlim = round(min((g.time+g.winlength)*multiplier+1, g.frames));
 
 %displaymenu = findobj('tag','displaymenu','parent',gcf);
 if ~isempty(g.winrej) && g.winstatus
@@ -3869,7 +3866,7 @@ end
 g.incallback = 0;
 %set(fig,'UserData', g);  % early save in case of bug in the following
 %if strcmp(g.mocap,'on'), g.winrej = g.winrej(end,:);end % nima
-if ~isempty(g.winrej)'
+if ~isempty(g.winrej)
     if g.winrej(end,1) == g.winrej(end,2) % remove unitary windows
         g.winrej = g.winrej(1:end-1,:);
     else
@@ -4805,12 +4802,10 @@ end
     % makes sure click is in valid position
 
     if g.trialstag ~= -1
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) < g.winlength*g.trialstag;
+        point_is_valid = tmppos(1) >= 0 && tmppos(1) < g.winlength*g.trialstag;
     else
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) <= highlim;
+        point_is_valid = tmppos(1) >= 0 && tmppos(1) <= highlim;
     end
-
-    point_is_valid = 1;
 
     if point_is_valid
         data = get(ax1,'UserData');
@@ -6497,7 +6492,7 @@ set(ax1,...
 
 % update scaling eye (I) if it exists
 % -----------------------------------
-eyeaxes = findobj('tag','eyeaxes','parent',fig);
+eyeaxes = findobj('tag','eyeaxes','parent',figh);
 if ~isempty(eyeaxes)
     eyetext = findobj('type','text','parent',eyeaxes,'tag','thescalenum');
     set(eyetext,'string',num2str(g.spacing,4))

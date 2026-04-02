@@ -20,6 +20,7 @@
 % You should have received a copy of the GNU General Public License
 % along with this program; if not, write to the Free Software
 
+% Should eeg_eegrej_adv save a backup copy before processing? (0 = no, 1 = yes)
 SAVEBACKUP = 1;
 
 %% EEGPLOT_ADV DEFAULTS
