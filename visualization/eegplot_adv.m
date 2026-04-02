@@ -4089,150 +4089,24 @@ catch return; end
 
 
 
-function g = normalize_chan_noplot(~,g,fig)
-
-%g = get(fig,'userdata');
-if g.normed
-    disp('Denormalizing...');
-else
-    disp('Normalizing...'); 
-end
-
-hmenu = findobj(fig, 'Tag', 'Normalize_menu');
-hbutton = findobj(fig, 'Tag', 'Norm');
-ax2 = findobj('tag','backeeg','parent',fig);
-ax1 = findobj('tag','eegaxis','parent',fig);
-data = get(ax1,'UserData');
-
-EEG = g.EEG;
-
-% if EEG.plotchannels == 1
-%     g.datastd = std(EEG.data(:,1:min(1000,g.frames)),[],2); 
-% else
-%     g.datastd = std(EEG.icaact(:,1:min(1000,g.frames)),[],2); 
-% end
-
- if isempty(g.datastd) %|| size(g.data,1) ~= size(g.datastd,1)
-%     data(:,1:min(1000,g.frames));
-     g.datastd = std(data(:,1:min(1000,g.frames)),[],2); 
- end
-
-%     if ~isfield(g,'oldspacing')
-%         g.oldspacing = 0;
-%     end
-if g.normed == 1
-    for i = 1:size(data,1)
-        
-        data(i,:,:) = data(i,:,:)*g.datastd(i);
-        
-        if ~isempty(g.data2)
-            g.data2(i,:,:) = g.data2(i,:,:)*g.datastd(i);
-        end
-    end
-    set(hbutton,'string', 'Norm');
-    try set(findobj('tag','ESpacing','parent',fig),'string',num2str(g.oldspacing)); catch; end
-else
-    g.datastd = std(data(:,1:min(1000,g.frames)),[],2); 
-    
-    % because of interpolation, a few channels std will be 0, which makes
-    % bizarre data display. This substitute the chanel std for the avg std of
-    % all channels
-    
-    if any(g.datastd < 0.001)
-       g.datastd(find(g.datastd < 0.001)) = mean(g.datastd);
-    end
-
-    for i = 1:size(data,1)
-        
-        data(i,:,:) = data(i,:,:)/g.datastd(i);
-        if ~isempty(g.data2)
-            g.data2(i,:,:) = g.data2(i,:,:)/g.datastd(i);
-        end
-    end
-    set(hbutton,'string', 'Denorm');
-    g.oldspacing = g.spacing;
-end
-
-g.normed = 1 - g.normed;
-%change_scale([],[],fig,0,ax1);
-set(hmenu, 'Label', fastif(g.normed,'Denormalize channels','Normalize channels'));
-%set(fig,'userdata',g);
-%set(ax1,'UserData',data);
-%eegplot_adv('setelect');
-%draw_data([],[],fig,0,[],g,ax1);
-
-disp('Done.');
-
-function g = normalize_chan_justdata(g)
-    % NORMALIZE_CHAN Normalize or denormalize g.data based on g.normed status.
-    %
-    % This function operates solely on the g.data field without figure properties.
-    
-    if g.normed
-        disp('Denormalizing...');
-        % Denormalize data by multiplying each channel by its original standard deviation
-        for i = 1:size(g.data, 1)
-            g.data(i, :, :) = g.data(i, :, :) * g.datastd(i);
-            if ~isempty(g.data2)
-                g.data2(i, :, :) = g.data2(i, :, :) * g.datastd(i);
-            end
-        end
-        g.normed = 0; % Set normalized flag to false
-    else
-        disp('Normalizing...');
-        
-        % Calculate standard deviation of data if not already set
-        if isempty(g.datastd) || size(g.data, 1) ~= size(g.datastd, 1)
-            g.datastd = std(g.data(:, 1:min(1000, g.frames)), [], 2);
-        end
-
-        % Handle cases where std is near zero (replace with average std to avoid anomalies)
-        if any(g.datastd < 0.001)
-            g.datastd(g.datastd < 0.001) = mean(g.datastd);
-        end
-        
-        % Normalize data by dividing each channel by its standard deviation
-        for i = 1:size(g.data, 1)
-            g.data(i, :, :) = g.data(i, :, :) / g.datastd(i);
-            if ~isempty(g.data2)
-                g.data2(i, :, :) = g.data2(i, :, :) / g.datastd(i);
-            end
-        end
-        g.normed = 1; % Set normalized flag to true
-    end
-
-
 function normalize_chan(~,~,fig)
 
 g = get(fig,'userdata');
 if g.normed
     disp('Denormalizing...');
 else
-    disp('Normalizing...'); 
+    disp('Normalizing...');
 end
 
 hmenu = findobj(fig, 'Tag', 'Normalize_menu');
 hbutton = findobj(fig, 'Tag', 'Norm');
-ax2 = findobj('tag','backeeg','parent',fig);
 ax1 = findobj('tag','eegaxis','parent',fig);
 data = get(ax1,'UserData');
 
-EEG = g.EEG;
+if isempty(g.datastd)
+    g.datastd = std(data(:,1:min(1000,g.frames)),[],2);
+end
 
-% if EEG.plotchannels == 1
-%     g.datastd = std(EEG.data(:,1:min(1000,g.frames)),[],2); 
-% else
-%     g.datastd = std(EEG.icaact(:,1:min(1000,g.frames)),[],2); 
-% end
-
- if isempty(g.datastd) %|| size(g.data,1) ~= size(g.datastd,1)
-%     data(:,1:min(1000,g.frames));
-     g.datastd = std(data(:,1:min(1000,g.frames)),[],2); 
- end
-
-%     if ~isfield(g,'oldspacing')
-%         g.oldspacing = 0;
-%     end
 if g.normed == 1
     for i = 1:size(data,1)
         
@@ -4267,13 +4141,10 @@ else
 end
 
 g.normed = 1 - g.normed;
-%change_scale([],[],fig,0,ax1);
 set(hmenu, 'Label', fastif(g.normed,'Denormalize channels','Normalize channels'));
 set(fig,'userdata',g);
 set(ax1,'UserData',data);
-%eegplot_adv('setelect');
 draw_data([],[],fig,0,[],g,ax1);
-
 disp('Done.');
 
 %THIRD MOUSE BUTTON
