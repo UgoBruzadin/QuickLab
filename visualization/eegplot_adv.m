@@ -2118,16 +2118,6 @@ else
     ax2 = findobj('tag','eegaxis','parent',fig);
     %change_scale([],[],fig,4,ax2);
     
-  case 'UNDO'
-
-    g = get(fig,'UserData');
-    g = UNDO(g);
-
-  case 'REDO'
-
-    g = get(fig,'UserData');
-    g = REDO(g);
-
   case 'saveandtag'
     g = get(fig,'UserData');
     EEG = g.EEG;
@@ -4398,25 +4388,6 @@ if isfield(g, 'eloc_file')
     end
 end
 
-function MarkChannel2(~,~,fig,channel_index) %MarkChannel original for BACKUP!
-g=get(fig,'UserData');
-%channel_index=get(channel_obj,'userdata')
-if isempty(g.command)
-    clear global in_callback; return;
-end
-if isfield(g, 'eloc_file')
-    if ~isfield(g.eloc_file, 'badchan')
-        for ii=1:length(g.eloc_file)
-            g.eloc_file(ii).badchan = 0;
-        end
-    end
-    g.eloc_file(channel_index).badchan = 1-g.eloc_file(channel_index).badchan;
-    %set(fig,'UserData',g);
-    draw_data([],[],fig,0,[],g);
-    draw_matrix(g);
-
-end
-
 function MarkChannel3(fig)
 
 ax1 = findobj('tag','backeeg','parent',fig);
@@ -4933,90 +4904,6 @@ end
     end
 
 
-function plot_topoplot_old(fig)
-    %fig = varargin{1};
-    g = get(fig,'UserData');
-    EEG = g.EEG;
-    
-    if EEG.plotchannels == 1
-    if ~isstruct(g.eloc_file) || ~isfield(g.eloc_file, 'theta') || isempty( [ g.eloc_file.theta ])
-        return;
-    end
-    ax1 = findobj('tag','backeeg','parent',fig); 
-    tmppos = get(ax1, 'currentpoint');
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
-    % plot vertical line
-    %yl = ylim(ax1);
-    %plot(ax1, [ tmppos tmppos ], yl, 'color', [0.8 0.8 0.8]);
-    if g.trialstag ~= -1 % time in second or in trials
-        multiplier = g.trialstag;
-    else
-        multiplier = g.srate;
-    end
-    lowlim = round(g.time*multiplier+1);
-    highlim = round(min((g.time+g.winlength)*multiplier+2,g.frames));
-    % makes sure click is in valid position
-    
-    if g.trialstag ~= -1
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) < g.winlength*g.trialstag;
-    else
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) <= highlim;
-    end
-    if point_is_valid
-        data = get(ax1,'UserData');
-        datapos = max(1, round(tmppos(1)+lowlim));
-        datapos = min(datapos, g.frames);
-        axes('Parent', fig, 'position',g.headpos,'units','normalized');
-        % get color
-        BackColor = get(fig,'Color');
-        
-        % plot topo % it changes the background color of the figure to EEGLAB's default
-        topoplot(data(:,datapos), g.eloc_file);
-        
-        % set background color back to whatever it was before.
-        set(fig,'Color',BackColor);
-    end
-    else
-%     ax1 = findobj('tag','backeeg','parent',fig); 
-%     tmppos = get(ax1, 'currentpoint');
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
-    tmppos = get(ax1, 'currentpoint');
-    % plot vertical line
-    %yl = ylim(ax1);
-    %plot(ax1, [ tmppos tmppos ], yl, 'color', [0.8 0.8 0.8]);
-    if g.trialstag ~= -1 % time in second or in trials
-        multiplier = g.trialstag;
-    else
-        multiplier = g.srate;
-    end
-    lowlim = round(g.time*multiplier+1);
-    highlim = round(min((g.time+g.winlength)*multiplier+2,g.frames));
-    % makes sure click is in valid position
-    
-    if g.trialstag ~= -1
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) < g.winlength*g.trialstag;
-    else
-        point_is_valid=tmppos(1) >= 0 && tmppos(1) <= highlim;
-    end
-    if point_is_valid
-        tmpelec = g.chans + 1 - round(tmppos(1,2) / g.spacing);
-        tmpelec = min(max(tmpelec, 1), g.chans);
-        
-        %labls = get(ax1, 'YtickLabel');
-        %component = str2num(labls(tmpelec+1,:));
-        
-        pop_prop_extended_adv(EEG, 0, tmpelec,'NaN',{'freqrange', [2 55]});
-    end
-    end
-%     if g.trialstag == -1
-%          latsec = (datapos-1)/g.srate;
-%          title(sprintf('Latency of %d seconds and %d milliseconds', floor(latsec), round(1000*(latsec-floor(latsec)))));
-%     else
-%         trial = ceil((datapos-1)/g.trialstag);
-%         latintrial = eeg_point2lat(datapos, trial, g.srate, g.limits, 0.001);
-%         title(sprintf('Latency of %d ms in trial %d', round(latintrial), trial));
-%     end
-
 %% These functions below are brand new, to be used by the new METHODS section
 
     function change_list(x,y)
@@ -5297,95 +5184,6 @@ function g = APPLY(g)
 
     draw_data([],[],gcf,6,[],g);
     eegplot_adv('winelec_auto');
-
-    
-function g = UNDO(g)
-
-g = get(gcf,'UserData');
-%g = THINKING(g,1);
-%set(gcf,'Color',[0 0 .8]);
-
-EEG = g.EEG;
-% 
-% if isfield(g,'old')
-% 
-%     % get number of gs stored.
-%     if ~isfield(g,'gnumber')
-%         g.gnumber = size(g.old,2);
-%         tempgnumber = size(g.old,2);
-%     else
-%         tempgnumber = g.gnumber;
-%     end
-%     if tempgnumber > 1
-%         tempgs = g.old; %collect all gs
-%         g = tempgs{tempgnumber-1}; % get end-1 g
-%         %try g = g{:}; catch; end % remove it from cell if inside cell
-%         g.gnumber = tempgnumber-1; % correctly name it as the end-1 g.
-%         g.old = tempgs;
-% 
-%         set(gcf,'UserData',g);
-%         ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
-% 
-%         if isfield(g.EEG,'plotchannels')
-%             if g.EEG.plotchannels == 1
-%                 g.data = g.EEG.data;
-%             else
-%                 g.data = g.EEG.icaact;
-%             end
-%         end
-%         g = make_eloc_file(g);
-%         
-%         set(ax1,'UserData',g.data);
-%         draw_data([],[],gcf,9,[],g);
-%         eegplot_adv('winelec_auto');
-%         %g = THINKING(g,0);
-%         draw_matrix(g);
-%     end
-% end
-%g = THINKING(g,0);
-%set(gcf,'Color',g.backcolor);
-
-function g = REDO(g)
-% 
-% g = get(gcf,'UserData');
-% %g = THINKING(g,1);
-% %set(gcf,'Color',[0 0 .8]);
-% EEG = g.EEG;
-% 
-% if isfield(g,'old')
-%     % get number of gs stored.
-%     if ~isfield(g,'gnumber')
-%         g.gnumber = size(g.old,1);
-%         tempgnumber = size(g.old,1);
-%     else
-%         tempgnumber = g.gnumber;
-%     end
-%     if tempgnumber < size(g.old,2)
-%         tempgs = g.old; %collect all gs
-%         g = tempgs{tempgnumber+1}; % get end-1 g
-%         g.gnumber = tempgnumber+1; % correctly name it as the end-1 g.
-%         g.old = tempgs;
-%         g.EEG.plotchannels = EEG.plotchannels;
-% 
-%         set(gcf,'UserData',g);
-%         ax1 = findobj('tag','eegaxis','parent',gcf); % axes handle
-%     
-%         if isfield(EEG,'plotchannels')
-%             if EEG.plotchannels == 1
-%                 g.data = g.EEG.data;
-%             else
-%                 g.data = g.EEG.icaact;
-%             end
-%         end
-%         g = make_eloc_file(g);
-%         
-%         set(ax1,'UserData',g.data);
-%         draw_data([],[],gcf,9,[],g);
-%         eegplot_adv('winelec_auto');
-%         draw_matrix(g);
-%     end
-% end
-
 
 %% ALL METHODS START HERE
 
@@ -5895,30 +5693,6 @@ function winrej_merged = merge_trials(winrej)
     end
    
     
-    %% not used!
-function g = storemarks(g)
-        
-   if isstruct(EEG)
-       g.EEG = EEG;
-       if isempty(g.winrej)
-           % makes an empty array of winrej
-%            g.winrej                    = zeros(EEG.trials,5+EEG.nbchan);
-%            g.winrej(:,1)               = 1:EEG.pnts:EEG.pnts*EEG.trials;   % start sample
-%            g.winrej(:,2)               = g.winrej(:,1)+EEG.pnts-1;               % end   sample
-%            g.winrej(:,3:5) = 1;
-%            
-           if EEG.plotchannels == 1
-               if isfield(EEG,'chanrej')
-                   g.winrej = EEG.chanrej;
-               end
-           else
-               if isfield(EEG,'comprej')
-                   g.winrej = EEG.comprej;
-               end
-           end
-       end
-   end
-
 function g = detect_flatline(g,max_flatline_duration,max_allowed_jitter)
    % modified from cleanline plugin
    % Copyright (C) Christian Kothe, SCCN, 2012, ckothe@ucsd.edu
@@ -5934,35 +5708,6 @@ function g = detect_flatline(g,max_flatline_duration,max_allowed_jitter)
            g.eloc_file(c).badchan = 1;
        end
    end
-
-function g = detect_channelpop(g,max_num_changes,min_threshold)
-   % modified from cleanline plugin
-   % Copyright (C) Christian Kothe, SCCN, 2012, ckothe@ucsd.edu
-
-   EEG = g.EEG;
-%    if ica
-%    winrej = zeros(size(EEG.nbchan,EEG))
-%    
-%    else
-% 
-%    end
-   ipt = [];
-   for i=1:size(EEG.icaact,1)
-        for j=1:size(EEG.icaact,2)
-            [ipt,res] = findchangepts(EEG.icaact(i,j,:),"MaxNumChanges",max_num_changes,"MinThreshold",min_threshold,"MinDistance",minDistance);
-        if ~isempty(ipt)
-            winrej(i,j) = 1;
-        end
-        end
-   end
-
-
-%     merged_list = [];
-%     for i = 1:size(list,1)
-%         if list(i,1:5) == list(i+1,1:5)
-%             list(i,6:end) = list(i,6:end) | list(i+1,6:end);
-%         end
-%     end
 
  %% plotting matrix
 
@@ -6146,135 +5891,6 @@ function matrix_click_callback(src, event, g)
 
 
 
-% %% prepare figure turned into a function!
-% 
-% function [ax0, ax1, figh] = prepare_figure(g,data)
-% icadefs;
-% [DEFAULT_PLOT_COLOR,DEFAULT_FIG_COLOR,BUTTON_COLOR,DEFAULT_AXIS_COLOR,DEFAULT_GRID_SPACING, DEFAULT_AXES_POSITION, DEFAULT_GRID_STYLE, SPACING_EYE,ORIGINAL_POSITION] = get_defaults(g);
-%   figh = figure('UserData', g,... % store the settings here
-%       'Color',DEFAULT_FIG_COLOR, 'name', g.title,...
-%       'MenuBar','none','tag', g.tag ,'Position',g.position, ...
-%       'numbertitle', 'off', 'visible', 'off', 'Units', 'Normalized',...
-%       'interruptible', 'off', 'busyaction', 'cancel');
-%   if strcmp(g.fullscreen,'on')
-%       figh.WindowState = 'maximized';
-%       %set(figh,'OuterPosition',[0 0 1 1]);
-%   end
-%   pos = get(figh,'position'); % plot relative to current axes
-%   q = [pos(1) pos(2) 0 0];
-%   s = [pos(3) pos(4) pos(3) pos(4)]./100;
-%   clf;
-%   
-%   % Plot title if provided
-%   if ~isempty(g.plottitle)
-%       h = findobj('tag', 'eegplottitle'); 
-%       if ~isempty(h)
-%           set(h, 'string',g.plottitle);
-%       else
-%           h = textsc(g.plottitle, 'title'); 
-%           set(h, 'tag', 'eegplottitle');
-%       end
-%   end
-%       
-%   % Background axis
-%   % --------------- 
-%   ax0 = axes('tag','backeeg','parent',figh,...
-%       'Position',DEFAULT_AXES_POSITION,...
-%       'Box','off','xgrid','off', 'xaxislocation', 'top', 'Units', 'Normalized'); 
-% 
-%   % Drawing axis
-%   % --------------- 
-%   YLabels = num2str((1:g.chans)');  % Use numbers as default
-%   YLabels = flipud(char(YLabels,' '));
-%   ax1 = axes('Position',DEFAULT_AXES_POSITION,...
-%       'userdata', data, ...% store the data here
-%       'tag','eegaxis','parent',figh,...%(when in g, slow down display)
-%       'Box','on','xgrid', g.xgrid,'ygrid', g.ygrid,...
-%       'gridlinestyle',DEFAULT_GRID_STYLE,...
-%       'Xlim',[0 g.winlength*g.srate],...
-%       'xtick',[0:g.srate*DEFAULT_GRID_SPACING:g.winlength*g.srate],...
-%       'Ylim',[0 (g.chans+1)*g.spacing],...
-%       'YTick',[0:g.spacing:g.chans*g.spacing],...
-%       'YTickLabel', YLabels,...
-%       'XTickLabel',num2str((0:DEFAULT_GRID_SPACING:g.winlength)'),...
-%       'TickLength',[.005 .005],...
-%       'Color','none',...
-%       'XColor',DEFAULT_AXIS_COLOR,...
-%       'YColor',DEFAULT_AXIS_COLOR,...
-%       'FontSize',8);
-%   
-%   if ischar(g.eloc_file) || isstruct(g.eloc_file)  % Read in electrode names
-%       if isstruct(g.eloc_file) && length(g.eloc_file) > size(data,1)
-%           g.eloc_file(end) = []; % common reference channel location
-%       end
-%       eegplot_adv('setelect', g.eloc_file, ax1);
-%   end
-%   
-% %   %% Retrieving bad chans and comps! #Ugo #Savecommand #mybadcomp #mybadchan
-% %   if isstruct(EEG)
-% %       if ~isfield(g.eloc_file, 'badchan')
-% %           for ii=1:length(g.eloc_file)
-% %               g.eloc_file(ii).badchan = 0;
-% %           end
-% %       end
-% %   end
-% 
-
-function reprint_main_axis(g,figh)
-  clf;
-  data = g.data;
-
-  [DEFAULT_PLOT_COLOR,DEFAULT_FIG_COLOR,BUTTON_COLOR,DEFAULT_AXIS_COLOR,DEFAULT_GRID_SPACING, DEFAULT_AXES_POSITION, DEFAULT_GRID_STYLE, SPACING_EYE,ORIGINAL_POSITION] = get_defaults(g);
-   ax0 = axes('tag','backeeg','parent',figh,...
-      'Position',DEFAULT_AXES_POSITION,...
-      'Box','off','xgrid','off', 'xaxislocation', 'top', 'Units', 'Normalized');
-  YLabels = num2str((1:g.chans)');  % Use numbers as default
-  YLabels = flipud(char(YLabels,' '));
-  ax1 = axes('Position',DEFAULT_AXES_POSITION,...
-      'userdata', data, ...% store the data here
-      'tag','eegaxis','parent',figh,...%(when in g, slow down display)
-      'Box','on','xgrid', g.xgrid,'ygrid', g.ygrid,...
-      'gridlinestyle',DEFAULT_GRID_STYLE,...
-      'Xlim',[0 g.winlength*g.srate],...
-      'xtick',[0:g.srate*DEFAULT_GRID_SPACING:g.winlength*g.srate],...
-      'Ylim',[0 (g.chans+1)*g.spacing],...
-      'YTick',[0:g.spacing:g.chans*g.spacing],...
-      'YTickLabel', YLabels,...
-      'XTickLabel',num2str((0:DEFAULT_GRID_SPACING:g.winlength)'),...
-      'TickLength',[.005 .005],...
-      'Color','none',...
-      'XColor',DEFAULT_AXIS_COLOR,...
-      'YColor',DEFAULT_AXIS_COLOR,...
-      'FontSize',8);
-
-
-function [DEFAULT_PLOT_COLOR,DEFAULT_FIG_COLOR,BUTTON_COLOR,DEFAULT_AXIS_COLOR,DEFAULT_GRID_SPACING, DEFAULT_AXES_POSITION, DEFAULT_GRID_STYLE, SPACING_EYE,ORIGINAL_POSITION] = get_defaults(g)
-
-DEFAULT_PLOT_COLOR = { [0 0 1], [0.7 0.7 0.7]};         % EEG line color
-try
-    icadefs;
-	DEFAULT_FIG_COLOR = BACKCOLOR;
-	BUTTON_COLOR = GUIBUTTONCOLOR;
-catch
-	DEFAULT_FIG_COLOR = [1 1 1];
-	BUTTON_COLOR =[0.8 0.8 0.8];
-end
-DEFAULT_AXIS_COLOR = 'k';         % X-axis, Y-axis Color, text Color
-DEFAULT_GRID_SPACING = 1;         % Grid lines every n seconds
-DEFAULT_GRID_STYLE = '-';         % Grid line style
-%YAXIS_NEG = 'off';                % 'off' = positive up 
-%DEFAULT_NOUI_PLOT_COLOR = 'k';    % EEG line color for noui option
-                                  %   0 - 1st color in AxesColorOrder
-SPACING_EYE = 'on';               % g.spacingI on/off
-%SPACING_UNITS_STRING = '';        % '\muV' for microvolt optional units for g.spacingI Ex. uV
-%MAXEVENTSTRING = 10;
-%DEFAULT_AXES_POSITION = [0.0964286 0.15 0.842 0.75-(MAXEVENTSTRING-5)/100];
-                                  % dimensions of main EEG axes
-ORIGINAL_POSITION = [50 50 800 500];
-                   
-MAXEVENTSTRING = g.maxeventstring;
-DEFAULT_AXES_POSITION = [0.05 0.03 0.865 1-(MAXEVENTSTRING-4)/100]; %[0.095 0.35 0.842 0.75-(MAXEVENTSTRING-5)/100];
-
 function g = make_eloc_file(g)
 
 % this function remakes the g based on the current EEG,
@@ -6407,99 +6023,6 @@ if isempty(g.events)
 end
 
 update_file_texts(g)
-
-function g = THINKING(g,stop)
-
-%figh = gcf;
-
-fig = findobj('tag','eegplot_adv');
-
-if nargin < 1
-    try g = get(fig,'UserData'); catch, return; end
-end
-
-g.thinking = stop;
-
-figh = findobj(gcf,'tag','eegplot_adv');
-
-ax0 = findobj(figh,'tag','backeeg');
-
-ax1 = findobj(figh,'tag','eegaxis');
-
-u10 = findobj(figh,'Tag','Etime');
-u9 = findobj(figh,'Tag','Evalue');
-u11 = findobj(figh,'Tag','Eelec');
-
-%u(10),u(11),u(9) THIS IS THE ORDER
-% this is their tags
-% u(9) = Eelec 
-% u(10) = Etime
-% u(11) = Evalue
-
-if stop == 1
-  try figh.WindowButtonMotionFcn = []; catch; end
-  try figh.WindowKeyPressFcn = []; catch; end
-  try figh.WindowScrollWheelFcn = []; catch; end
-  try figh.HitTest = 'off'; catch; end
-else
-  try figh.HitTest = 'on'; catch; end
-  try figh.WindowScrollWheelFcn = {@mouse_scroll_wheel,figh,ax0,ax1,u10,u9,u11}; catch; end
-  try figh.WindowButtonMotionFcn = {@mouse_motion,figh,ax0,ax1,u10,u9,u11}; catch; end
-  try figh.WindowKeyPressFcn = {@eegplot_readkey,figh,ax0,ax1,u10,u9,u11}; catch; end
-end
-
-set(ax0,'UserData',g);
-
-function g = TYPING(g,stop)
-
-%figh = gcf;
-
-if nargin < 1
-    g = get(gcf,'UserData');
-end
-
-%g.typing = stop;
-
-figh = findobj(gcf,'tag','eegplot_adv');
-
-ax0 = findobj(figh,'tag','backeeg');
-
-ax1 = findobj(figh,'tag','eegaxis');
-
-u10 = findobj(figh,'Tag','Etime');
-u9 = findobj(figh,'Tag','Evalue');
-u11 = findobj(figh,'Tag','Eelec');
-
-%u(10),u(11),u(9) THIS IS THE ORDER
-% this is their tags
-% u(9) = Eelec 
-% u(10) = Etime
-% u(11) = Evalue
-
-if stop == 1
-  %figh.WindowKeyPressFcn = [];
-%   set(ax1, 'windowbuttonmotionfcn', {[]});
-%   set(ax1, 'WindowKeyPressFcn',     {[]});
-else
-  %set(ax1, 'WindowScrollWheelFcn',  {@mouse_scroll_wheel,figh,ax0,ax1,B,C,A});
-  %try figh.WindowKeyPressFcn = {@eegplot_readkey,figh,ax0,ax1,u10,u9,u11}; catch; end
-  %set(ax1, 'WindowKeyPressFcn',     {@eegplot_readkey,figh,ax0,ax1,B,C,A});
-end
-
-set(ax1,...
-    'YTick', [0:g.spacing:g.chans*g.spacing],...
-    'Ylim',  [g.elecoffset*g.spacing (g.elecoffset+g.dispchans+1)*g.spacing] ); % 'YLim',[0 (g.chans+1)*g.spacing]
-
-% update scaling eye (I) if it exists
-% -----------------------------------
-eyeaxes = findobj('tag','eyeaxes','parent',figh);
-if ~isempty(eyeaxes)
-    eyetext = findobj('type','text','parent',eyeaxes,'tag','thescalenum');
-    set(eyetext,'string',num2str(g.spacing,4))
-end
-
-%set(gcf, 'UserData', g);
-
 
 function vertstring = vert_string(string)
 
