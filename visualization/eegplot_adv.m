@@ -2790,7 +2790,6 @@ else
 
     abscmin = max(1,round(winrej2(1,1)-lowlim));
     abscmax = round(winrej2(1,2)-lowlim);
-    maxXlim = get(gca, 'xlim');
 
     plot(ax1,abscmin+1:abscmax+1,data(g.chans-channel+1,abscmin+lowlim:abscmax+lowlim) ...
         -meandata(g.chans-channel+1)+channel*g.spacing + (g.dispchans+1)*(oldspacing-g.spacing)/2 +g.elecoffset*(oldspacing-g.spacing), 'color',tmpcolor,'clipping','on')
@@ -2915,83 +2914,42 @@ function draw_data(varargin)
             data = g.data;
         case 10
             g.time = p2;
-        case 11 % go to previous winrej
-    if ~isempty(g.winrej)
-        if g.time > 0
-            % Convert current time to bins/samples
-            if g.trialstag(1) ~= -1  % epoched data
-                %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
-                % Adjust for epoch number
-                currentEpoch = floor(g.time);
-                currentBin = currentEpoch * g.EEG.pnts +1;
-            else  % continuous data
-                currentBin = round(g.time * g.EEG.srate);
-            end
-            
-            % Find the closest previous winrej
-            prevWinrej = [];
-            maxPrevBin = -1;
-            for i = 1:size(g.winrej, 1)
-                if g.winrej(i, 1) < currentBin && g.winrej(i, 1) > maxPrevBin
-                    prevWinrej = g.winrej(i, :);
-                    maxPrevBin = g.winrej(i, 2);
-                end
-            end
-            
-            % If found, move to that winrej
-            if ~isempty(prevWinrej)
-                if g.trialstag(1) ~= -1  % epoched data
-                    % Convert bin back to epoch and latency
-                    targetEpoch = floor(prevWinrej(1) / g.EEG.pnts);
-                    targetLatency = mod(prevWinrej(1), g.EEG.pnts);
-                    % Ensure we start at the beginning of the epoch
-                    g.time = targetEpoch;
-                else  % continuous data
-                    g.time = prevWinrej(1) / g.EEG.srate;
-                    % Ensure we don't exceed frame limits
-                    if g.time > g.frames/g.EEG.srate
-                        g.time = g.frames/g.EEG.srate - g.winlength;
-                    end
-                end
-            end
-        end
-    end
-
-        case 12 % go to next winrej
+        case {11, 12} % go to previous (11) or next (12) winrej
             if ~isempty(g.winrej)
                 % Convert current time to bins/samples
-                if g.trialstag(1) ~= -1  % epoched data
-                    %currentBin = round((g.time - g.EEG.xmin) * g.EEG.srate);
-                    % Adjust for epoch number
-                    currentEpoch = floor(g.time);
-                    currentBin = currentEpoch * g.EEG.pnts +1;
-                else  % continuous data
+                if g.trialstag(1) ~= -1
+                    currentBin = floor(g.time) * g.EEG.pnts + 1;
+                else
                     currentBin = round(g.time * g.EEG.srate);
                 end
 
-                % Find the closest next winrej
-                nextWinrej = [];
-                minNextBin = inf;
-                for i = 1:size(g.winrej, 1)
-                    if g.winrej(i, 1) > currentBin && g.winrej(i, 1) < minNextBin
-                        nextWinrej = g.winrej(i, :);
-                        minNextBin = g.winrej(i, 1);
+                % Find closest winrej in the requested direction
+                starts = g.winrej(:, 1);
+                if p1 == 11 % previous
+                    candidates = find(starts < currentBin);
+                    if ~isempty(candidates)
+                        [~, idx] = max(starts(candidates));
+                        targetBin = starts(candidates(idx));
+                    else
+                        targetBin = [];
+                    end
+                else % next
+                    candidates = find(starts > currentBin);
+                    if ~isempty(candidates)
+                        [~, idx] = min(starts(candidates));
+                        targetBin = starts(candidates(idx));
+                    else
+                        targetBin = [];
                     end
                 end
 
-                % If found, move to that winrej
-                if ~isempty(nextWinrej)
-                    if g.trialstag(1) ~= -1  % epoched data
-                        % Convert bin back to epoch and latency
-                        targetEpoch = floor(nextWinrej(1) / g.EEG.pnts);
-                        % Set time to start of the epoch
-                        g.time = targetEpoch;
-                    else  % continuous data
-                        g.time = nextWinrej(1) / g.EEG.srate;
-                        % Ensure we don't exceed frame limits
-                        if g.time > g.frames/g.EEG.srate
-                            g.time = g.frames/g.EEG.srate - g.winlength;
-                        end
+                % Navigate to the found winrej
+                if ~isempty(targetBin)
+                    if g.trialstag(1) ~= -1
+                        g.time = floor(targetBin / g.EEG.pnts);
+                    else
+                        g.time = targetBin / g.EEG.srate;
+                        g.time = min(g.time, g.frames/g.EEG.srate - g.winlength);
                     end
                 end
             end
@@ -3013,23 +2971,9 @@ function draw_data(varargin)
     end
     set(figh, 'userdata', g);
     
-    % Something is wrong when epoched data switches to unepoched data.
-    % the g.time and g.winlength are not correct, g.time grows exponentially
-    % with time, not in perfect bin windows (isntead of 1048 bins, it's a
-    % a bit bigger very time.
-%     if g.trialstag ~= -1 % time in second or in trials
-%         lowlim = round(g.time*multiplier+1);
-%         highlim = round(min((g.time+g.winlength)*multiplier+2,g.frames));
-%     else
-         lowlim = round(g.time*multiplier+1);
-         highlim = round(min((g.time+g.winlength)*multiplier+2,g.frames));
-%     end
+    lowlim = round(g.time*multiplier+1);
+    highlim = round(min((g.time+g.winlength)*multiplier+2,g.frames));
    
-    % Plot data and update axes
-    % -------------------------
-    % if isempty(data)
-    %     if 
-    %     data = g.
     switch lower(g.submean) % subtract the mean ?
         case 'on'
             if ~isempty(g.data2)
@@ -3052,78 +2996,30 @@ function draw_data(varargin)
     % plot data
     % ---------
     hold(ax1,'on');
-    
-%     if ~isfield(g.eloc_file, 'display')
-%         for ii=1:length(g.eloc_file)
-%             g.eloc_file(ii).display = 1;
-%         end
-%     end
-    
-    chans_list_bad=[];
-    list_bad_chans=[];
-    chans_list_good=[];
-    chans_list_good2=[];
-    if ~isfield(g, 'eloc_file')
-        %chans_list_good=find([g.eloc_file.display]);
-        %chans_list_good2=find([g.eloc_file.display]);
-    else
-        if isstruct(g.eloc_file) 
-            if ~isfield(g.eloc_file, 'badchan')
-                for ii=1:length(g.eloc_file)
-                    g.eloc_file(ii).badchan = 0;
-                end
-            end
 
-        chans_list_bad=g.chans-find([g.eloc_file.badchan])+1;
-        chans_list_good=setdiff(1:g.chans,chans_list_bad);
-        %chans_list_good2=find([g.eloc_file.display]);
+    chans_list_bad = [];
+    chans_list_good = [];
+    if isfield(g, 'eloc_file') && isstruct(g.eloc_file)
+        if ~isfield(g.eloc_file, 'badchan')
+            for ii=1:length(g.eloc_file)
+                g.eloc_file(ii).badchan = 0;
+            end
         end
+        chans_list_bad = g.chans - find([g.eloc_file.badchan]) + 1;
+        chans_list_good = setdiff(1:g.chans, chans_list_bad);
     end
     
     % plot channels whose "badchan" field is set to 1.
     % Bad channels are plotted first so that they appear behind the good
     % channels in the eegplot_adv figure window.
 
-    %THIS IS THE PLOT FUNCTION FOR CHANGING THE COLOR OF THE CHANNEL UGO
-    % attempting to print the selected areas UGO LEFT HERE
-    if ~isempty(g.winrej)
-        
-        % #COLORS
-        % --- PLOT THE WHOLE DATA IN BLUE
-        tmp_plot_data_y = plotChannel(oldspacing,meandata,data,g,chans_list_good2,lowlim,highlim);
-        plot(ax1,tmp_plot_data_y', 'color', DEFAULT_PLOT_LINES, 'clipping','on');
-        % --- MAKE NEW LIMITS
-        highlim2 = highlim;
-        lowlim2 = lowlim;
-        
+    % Plot bad channels in red, good channels in blue
+    if ~isempty(chans_list_bad)
         tmp_plot_data_y = plotChannel(oldspacing,meandata,data,g,chans_list_bad,lowlim,highlim);
         plot(ax1,tmp_plot_data_y', 'color', DEFAULT_PLOT_SELECTED, 'clipping','on');
-        chans_list_bad = [chans_list_bad,list_bad_chans];
-        % plot the blue parts
-        tmp_plot_data_y = plotChannel(oldspacing,meandata,data,g,chans_list_bad,lowlim,highlim2);
-    else
-         tmp_plot_data_y = plotChannel(oldspacing,meandata,data,g,chans_list_bad,lowlim,highlim);
-         plot(ax1,tmp_plot_data_y', 'color', DEFAULT_PLOT_SELECTED, 'clipping','on');  
     end
     
-    %NORMAL PLOT RED LINE 
-    
-    if ~isempty(chans_list_bad)
-        %tmp_plot_data_x=1:length(lowlim:highlim);
-        tmp_plot_data_x=1:length(lowlim:highlim);
-        tmp_plot_data_y=nan(length(chans_list_bad),length(lowlim:highlim));
-        for ii = 1:length(chans_list_bad)
-            i=chans_list_bad(ii);
-            tmp_plot_data_y(ii,tmp_plot_data_x)=data(g.chans-i+1,lowlim:highlim) ...
-                - meandata(g.chans-i+1) ...
-                + i*g.spacing ...
-                + (g.dispchans+1)*(oldspacing-g.spacing)/2 ...
-                + g.elecoffset*(oldspacing-g.spacing);
-        end
-
-    end
-    % REPLOT channels adjusting for channel errors 
-    % SOMETHING IS OFF ABOUT THIS CODE?! INVESTIGATE IMMEDIATLY
+    % Plot good channels
     if ~isempty(chans_list_good)
         chans_list_good_N=length(chans_list_good);
         tmp_plot_data_x_N=length(lowlim:highlim);
@@ -3180,7 +3076,6 @@ function draw_data(varargin)
 
             abscmin = max(1,round(winrej(tpmi,1)-lowlim));
             abscmax = round(winrej(tpmi,2)-lowlim);
-            maxXlim = get(gca, 'xlim');
             chanrej = find(winrej(tpmi,6:end));
             chanrej = abs(chanrej - g.chans - 1);
             for i = chanrej
@@ -3212,20 +3107,14 @@ function draw_data(varargin)
          g.data2 = get(ax1, 'userdata');
          set(ax1, 'userdata', tmpdata);
          set(figh, 'userdata', g);
-     else 
+     else
          draw_background([],[],figh,g);
      end
-
-%draw_matrix(g)
-
-
 
 % Draw background
 % ---------------------------------
 function draw_background(varargin)
 QuickLabDefs;
-
-fig = findobj('tag','eegplot_adv');
 
 if nargin >= 3
     fig = varargin{3};
@@ -3270,41 +3159,6 @@ highlim = round(min((g.time+g.winlength)*multiplier+1, g.frames));
 
 %displaymenu = findobj('tag','displaymenu','parent',gcf);
 if ~isempty(g.winrej) && g.winstatus
-%     if g.trialstag ~= -1 % epoched data
-%         indices = find((g.winrej(:,1)' >= lowlim & g.winrej(:,1)' <= highlim) | ...
-%             (g.winrej(:,2)' >= lowlim & g.winrej(:,2)' <= highlim));
-%         if ~isempty(indices)
-%             tmpwins1 = g.winrej(indices,1)';
-%             tmpwins2 = g.winrej(indices,2)';
-%             if size(g.winrej,2) > 2
-%                 tmpcols  = g.winrej(indices,3:5);
-%             else
-%                 tmpcols  = g.wincolor;
-%             end
-%             try    [cumul, indicescount] = histc(  tmpwins1, (min(tmpwins1)-1):g.trialstag:max(tmpwins2));
-%             catch, [cumul, indicescount] = myhistc(tmpwins1, (min(tmpwins1)-1):g.trialstag:max(tmpwins2));
-%             end
-%             count = zeros(size(cumul));
-%             %if ~isempty(find(cumul > 1)), find(cumul > 1), end
-%             for tmpi = 1:length(tmpwins1)
-%                 poscumul = indicescount(tmpi);
-%                 heightbeg = count(poscumul)/cumul(poscumul);
-%                 heightend = heightbeg + 1/cumul(poscumul);
-%                 count(poscumul) = count(poscumul)+1;
-%                 winrej = [tmpwins1(tmpi)-lowlim tmpwins2(tmpi)-lowlim ...
-%                           tmpwins2(tmpi)-lowlim tmpwins1(tmpi)-lowlim];
-%                 winheigh = [heightbeg heightbeg heightend heightend];
-%                 patch_params = {winrej, winheigh, tmpcols(tmpi,:), 'EdgeColor', tmpcols(tmpi,:)};
-%                 if verLessThan_matlab_9
-%                     patch(patch_params{:});
-%                 else
-%                     patch(ax0, patch_params{:});
-%                 end
-%             end
-%         end
-%    else
-
-        %patch(ax0,[0 0 1 1],DEFAULT_FIG_COLOR);
 
         event2plot1 = find ( g.winrej(:,1) >= lowlim & g.winrej(:,1) <= highlim ); % start events
         event2plot2 = find ( g.winrej(:,2) >= lowlim & g.winrej(:,2) <= highlim ); % end events
@@ -3312,11 +3166,6 @@ if ~isempty(g.winrej) && g.winstatus
         event2plot  = union_bc(union(event2plot1, event2plot2), event2plot3);
         total_winrej = g.winrej(event2plot,:);
 
-if g.trialstag ~= -1
-    alltrialtag = [0:g.trialstag:g.frames]; 
-else
-
-end
 nowinrej = [];
 lowlim2 = lowlim;
 highlim2 = highlim;
@@ -3412,16 +3261,6 @@ else % paints everything
             patch(ax0, patch_params{:});
         end
 end
-
-% plot tags
-% ---------
-%if trialtag(1) ~= -1 & displaystatus % put tags at arbitrary places
-% 	for tmptag = trialtag
-%		if tmptag >= lowlim & tmptag <= highlim
-%			plot([tmptag-lowlim tmptag-lowlim], [0 1], 'b--');
-%		end
-%	end
-%end
 
 % draw events if any
 % ------------------
@@ -3638,8 +3477,6 @@ if verLessThan_matlab_9
     axes(ax1); % changing axes very slows down drawing
 end
 
-%draw_matrix(g);
-
 % Redraw EEG and change window size
 function change_eeg_window_length(~,~,fig,p1)
     g = get(fig,'UserData');
@@ -3727,8 +3564,7 @@ function change_scale(varargin)
             g.spacing = max(0.005, g.spacing * 0.8);
         case 3
             g.spacing = 0;
-        case 4 
-            g.spacing = g.spacing;
+        case 4 % keep current spacing (refresh)
     end
     if ismember(p1, [1 2])
         spacing_deka=10^(floor(log10(g.spacing))-1);
