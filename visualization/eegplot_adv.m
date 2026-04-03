@@ -443,80 +443,8 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
   defctrlmotioncom = ''; % CTRL press and motion -> do nothing by default
   defctrlupcom = ''; % CTRL press and up -> do nothing by default
   
-  %% Try Defaults
-    try g.data;                 catch g.data = [];                   end       
-     try g.data_ch = EEG.data;                 catch g.data_ch = [];                   end       
-     try g.data_pc = EEG.icaact;                 catch g.data_pc = [];                   end       
-    try g.rand;                catch g.rand = floor(rand()*1000);  end
-     try g.old;                 catch g.old = {};                   end    
-     try g.gnumber;             catch g.gnumber     = 1;            end
-     try g.typing; 		        catch, g.typing	= 0; 	        end
-     try g.thinking; 		    catch, g.thinking	= 0; 	        end
-     %g.thinking	= 0;
-     %try g.backcolor; 		    catch, g.backcolor  = [0.93 .96 1]; end
-   try g.srate; 		    catch, g.srate		= 256; 	end
-     try g.spacing_ch; 			catch, g.spacing_ch	= 0; 	end
-     try g.spacing_pc; 			catch, g.spacing_pc	= 4; 	end
-   try g.spacing; 			catch, g.spacing	= 0; 	end
-     %try g.oldspacing; 	    catch, g.oldspacing	= 0; 	end
-   try g.eloc_file; 		catch, g.eloc_file	= 0; 	end % 0 mean numbered
-      try g.eloc_file_ch; 		catch, g.eloc_file_ch	= 0; 	end % 0 mean numbered
-      try g.eloc_file_pc; 		catch, g.eloc_file_pc	= 0; 	end % 0 mean numbered
-   try g.winlength; 		catch, g.winlength	= 5; 	end % Number of seconds of EEG displayed
-   try g.fullscreen; 	    catch, g.fullscreen = 'on';	end
-   try g.position; 	        catch, g.position	= ORIGINAL_POSITION; g.fullscreen = 'on';	end
-   try g.title; 		    catch, g.title		= ['Scroll activity -- eegplot_adv()']; 	end
-   try g.plottitle; 		catch, g.plottitle	= ''; 	end
-   try g.trialstag; 		catch, g.trialstag	= -1; 	end
-   try g.winrej; 			catch, g.winrej		= []; 	end
-    try g.winrej_pc; 			catch, g.winrej_pc		= []; 	end
-    try g.winrej_ch; 			catch, g.winrej_ch		= []; 	end
-   try g.command; 			catch, g.command	= ''; 	end
-      try g.command2; 			catch, g.command2	= ''; 	end
-   try g.tag; 				catch, g.tag		= 'eegplot_adv'; end
-   try g.xgrid;		        catch, g.xgrid		= 'off'; end
-   try g.ygrid;		        catch, g.ygrid		= 'off'; end
-   
-   try g.backcolor; 		catch, g.backcolor  = [0.93 .96 1]; end
-   try g.color;		        catch, g.color		= 'off'; end
-   try g.wincolor; 		    catch, g.wincolor   = DEFAULT_PLOT_INTERP; end
-
-   try g.submean;			catch, g.submean	= 'on'; end
-   try g.children;			catch, g.children	= 0; end
-   try g.limits;		    catch, g.limits	    = [0 1000*(size(data,2)-1)/g.srate]; end
-   try g.freqs;             catch, g.freqs	    = []; end  % Ramon
-   try g.freqlimits;	    catch, g.freqlimits	= []; end
-   try g.dispchans; 		catch, g.dispchans  = size(data,1); end
-   try g.butlabel; 		    catch, g.butlabel   = 'Interpolate & Reject'; end
-   try g.colmodif; 		    catch, g.colmodif   = { g.wincolor }; end
-   try g.scale; 		    catch, g.scale      = 'on'; end
-   try g.events; 		    catch, g.events      = []; end
-     try g.allevents; 		    catch, g.allevents      = g.events; end
-     try g.events_show; 		catch, g.events_show    = []; end
-     try g.e;                   catch, g.e = []; end
-
-   try g.ploteventdur;      catch, g.ploteventdur = 'off'; end
-   try g.data2;             catch, g.data2      = []; end
-   try g.plotdata2;         catch, g.plotdata2 = 'off'; end
-   try g.mocap;		        catch, g.mocap		= 'off'; end % nima
-   try g.selectcommand;     catch, g.selectcommand     = { '' '' '' }; end % { defdowncom defmotioncom defupcom }
-   try g.ctrlselectcommand; catch, g.ctrlselectcommand = { '' '' '' }; end % { defctrldowncom defctrlmotioncom defctrlupcom }
-   try g.datastd;           catch, g.datastd = []; end %ozgur
-    try g.datastd_ch;           catch, g.datastd_ch = []; end %ozgur
-    try g.datastd_pc;           catch, g.datastd_pc = []; end %ozgur
-   try g.normed;            catch, g.normed = 0; end %ozgur
-   try g.normed_ch;            catch, g.normed_ch = 0; end %ozgur
-   try g.normed_pc;            catch, g.normed_pc = 0; end %ozgur
-   try g.envelope;          catch, g.envelope = 0; end%ozgur
-   try g.maxeventstring;    catch, g.maxeventstring = 20; end % JavierLC
-   try g.isfreq;            catch, g.isfreq = 0;    end % Ramon
-   try g.savecommand;            catch, g.savecommand = '';    end % Ugo
-       try g.savecommand2;       catch, g.savecommand2 = '';    end % Ugo
-       try g.matrixpos;           catch, g.matrixpos = [ 0.922   0.25      0.075    0.13 ]; end % Ugo
-       try g.headpos;           catch, g.headpos = [ .915    0.25    0.080    0.13 ]; end % Ugo
-       
-       try g.com;               catch g.com = ''; end
-       try g.TBTcom;            catch g.TBTcom = ''; end
+  %% Apply defaults for all g fields (see utils/eegplot_defaults.m)
+   g = eegplot_defaults(g, data, EEG);
    
    
    %% continue defaults
