@@ -41,7 +41,6 @@ switch mode
         % buttons
         BUTTON_COLOR = BACKEEGLABCOLOR;
         DEFAULT_ON_COLOR = [0.5 1 0.5]; % green color
-        DEFAULT_ON_COLOR = BUTTON_COLOR;
         DEFAULT_OFF_COLOR = [1 .5 .5]; % red color
         DEFAULT_SPECIAL_COLOR = [1 1 0];
         DEFAULT_SPECIAL_TEXT = [0 0 0];

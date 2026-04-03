@@ -133,8 +133,8 @@ end
 % ----------------------------------------------------
 if nargin < 6 || isempty(crit_alg),
     crit_alg = selectcrit{1};
-elseif isempty(crit_alg) && nargin > 6 && ~isempty(crit_alg),
-    showpopup = true; % wrong input -> show pop-up window!
+elseif ~ischar(crit_alg) && ~isempty(crit_alg),
+    showpopup = true; % wrong input type -> show pop-up window!
 end
 
 if nargin < 7 || isempty(crit_opt),
