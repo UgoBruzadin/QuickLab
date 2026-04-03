@@ -184,31 +184,31 @@ end
 
 % set up the figure
 % -----------------
-column = ceil(sqrt( length(chanorcomp) ))+5;
+column = ceil(sqrt( length(chanorcomp) ));
 rows = ceil(length(chanorcomp)/column);
-if ~exist('fig','var') || isempty(fig)
-    figure('name', [ 'View ' fastif(typecomp,'channels','components') ' properties - pop_viewprops2() (dataset: ' EEG.filename ')'], 'tag', currentfigtag, ...
-        'numbertitle', 'off', 'color', BACKCOLOR,'Visible',visible);
-    set(gcf,'MenuBar', 'none');
-    pos = get(gcf,'Position');
-    if ~typecomp && isfield(EEG.etc, 'ic_classification')
-        set(gcf,'Position', [pos(1) 20 800/7*column 600/5*rows*1.2]);
-    else
-        set(gcf,'Position', [pos(1) 20 800/7*column 600/5*rows]);
-    end
-    incx = 120;
-    incy = 110;
-    sizewx = 100/column;
-    if rows > 2
-        sizewy = 90/rows;
-    else
-        sizewy = 80/rows;
-    end
-    pos = get(gca,'position'); % plot relative to current axes
-    q = [pos(1) pos(2) 0 0];
-    s = [pos(3) pos(4) pos(3) pos(4)]./100;
-    axis off;
+incx = 120;
+incy = 110;
+sizewx = 100/column;
+if rows > 2
+    sizewy = 90/rows;
+else
+    sizewy = 80/rows;
 end
+if ~exist('fig','var') || isempty(fig)
+    fig = figure('name', [ 'View ' fastif(typecomp,'channels','components') ' properties - pop_viewprops2() (dataset: ' EEG.filename ')'], 'tag', currentfigtag, ...
+        'numbertitle', 'off', 'color', BACKCOLOR,'Visible',visible);
+    set(fig,'MenuBar', 'none');
+    pos = get(fig,'Position');
+    if ~typecomp && isfield(EEG.etc, 'ic_classification')
+        set(fig,'Position', [pos(1) 20 800/7*column 600/5*rows*1.2]);
+    else
+        set(fig,'Position', [pos(1) 20 800/7*column 600/5*rows]);
+    end    
+end
+pos = get(gca,'position'); % plot relative to current axes
+q = [pos(1) pos(2) 0 0];
+s = [pos(3) pos(4) pos(3) pos(4)]./100;
+axis off;
 
 % figure rows and columns
 % -----------------------
@@ -250,7 +250,7 @@ if ~isempty(haspar)
     parfor ri = chanorcomp
         %% plot the topoplot headmap
         %QuickLabDefs;
-        figure('tag',strcat('fig',int2str(ri),currentfigtag),'Visible','off');
+        figs(ri) = figure('tag',strcat('fig',int2str(ri),currentfigtag),'Visible','off');
         ax(ri) = axes('Tag',strcat('Ax',int2str(ri),currentfigtag));
         if typecomp
             switch fig_opts{1}
@@ -312,7 +312,7 @@ else
     for ri = chanorcomp
         %% plot the topoplot headmap
 
-        figure('tag',strcat('fig',int2str(ri),currentfigtag),'Visible','off');
+        figs(ri) = figure('tag',strcat('fig',int2str(ri),currentfigtag),'Visible','off');
         ax(ri) = axes('Tag',strcat('Ax',int2str(ri),currentfigtag));
         
         if typecomp
@@ -380,7 +380,7 @@ for ri = chanorcomp
     Y(ri)  = (rows-floor((count-1)/column))/rows * incy - sizewy*1.3;
     count = count +1;
 
-    fig = findobj('tag', currentfigtag);
+    %fig = findobj('tag', currentfigtag);
     
     checkcom = {@checkbox,int2str(ri),0};
     switch fig_opts{1}
@@ -406,8 +406,8 @@ for ri = chanorcomp
 
             cmap = colormap(ERP);
             cmap2 = colormap(ERPsum);
-            newERP = copyobj(ERP,fig,'legacy');
-            newERPsum= copyobj(ERPsum,fig,'legacy');
+            newERP = copyobj(ERP,figs(ri),'legacy');
+            newERPsum= copyobj(ERPsum,figs(ri),'legacy');
 
             set(newERP,'Units','Normalized', 'Position',[X(ri) Y(ri)+sizewy*.3 sizewx sizewy*.7].*s+q,'colormap',cmap);
             set(newERPsum,'Units','Normalized', 'Position',[X(ri) Y(ri)+sizewy*.1 sizewx sizewy*.2].*s+q,'colormap',cmap2);
@@ -439,8 +439,8 @@ for ri = chanorcomp
 
             cmap = colormap(ERP);
             cmap2 = colormap(ERPsum);
-            newERP = copyobj(ERP,fig,'legacy');
-            newERPsum= copyobj(ERPsum,fig,'legacy');
+            newERP = copyobj(ERP,figs(ri),'legacy');
+            newERPsum= copyobj(ERPsum,figs(ri),'legacy');
             
             set(newERP,'Units','Normalized', 'Position',[X(ri) Y(ri)+sizewy*.3 sizewx sizewy*.7].*s+q,'colormap',cmap);
             set(newERPsum,'Units','Normalized', 'Position',[X(ri) Y(ri)+sizewy*.1 sizewx sizewy*.2].*s+q,'colormap',cmap2);
@@ -484,11 +484,11 @@ for ri = chanorcomp
 %                 
         %% plot the button
         % ---------------
-        if ~strcmp(get(gcf, 'tag'), currentfigtag)
-            figure(findobj('tag', currentfigtag));
-        end
+%         if ~strcmp(get(fig, 'tag'), currentfigtag)
+%             figure(findobj('tag', currentfigtag));
+%         end
         % alterations by Ugo 2021, original commented
-        % button = uicontrol(gcf, 'Style', 'pushbutton', 'Units','Normalized', 'Position',...
+        % button = uicontrol(fig, 'Style', 'pushbutton', 'Units','Normalized', 'Position',...
         %    [X Y+sizewy sizewx/3 sizewy*0.18].*s+q, 'tag', ['comp' num2str(ri)]);
         
         % make the buttons smaller
@@ -546,40 +546,40 @@ end
 toc
 %% CANCEL button
 % -------------
-cancel  = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Cancel', 'Units','Normalized','Position',[-10 -10 10 6].*s+q, 'callback', 'close(gcf);');
+cancel  = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Cancel', 'Units','Normalized','Position',[-10 -10 10 6].*s+q, 'callback', 'close(fig);');
 
 % Plot ScrollPlot button
 % -------------
 commandPlot = ['pop_eegplot_adv(EEG, 2, 2, 1, 1);'];
         
-plotComp = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_ON_COLOR, 'string', 'Plot Component Scroll', 'Units','Normalized','Position',[30 -10 15 6].*s+q, 'callback', commandPlot');
+plotComp = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_ON_COLOR, 'string', 'Plot Component Scroll', 'Units','Normalized','Position',[30 -10 15 6].*s+q, 'callback', commandPlot');
 
 %% SAVE CORRMAP button
 % -------------
-commandSave = [ 'tmpstatus = get( findobj(''parent'', gcf, ''Style'', ''checkbox''), ''value'');'...
+commandSave = [ 'tmpstatus = get( findobj(''parent'', fig, ''Style'', ''checkbox''), ''value'');'...
         'A = fliplr([tmpstatus{:}]);'...
  		'EEG.reject.gcompreject(' num2str(chanorcomp(1)) ' : ' num2str(chanorcomp(end)) ' ) = A;'...
         'EEG = eegh(com, EEG);'...
         'save_corrmaps(EEG)'];
         
-saveComp = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_ON_COLOR, 'string', 'Save CorrMaps', 'Units','Normalized','Position',[45 -10 15 6].*s+q, 'callback', commandSave');
+saveComp = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_ON_COLOR, 'string', 'Save CorrMaps', 'Units','Normalized','Position',[45 -10 15 6].*s+q, 'callback', commandSave');
 
 %% Reject and run N-1 PCA button
 % -------------
 
-% commandN1PCA = [ 'tmpstatus = get( findobj(''parent'', gcf, ''Style'', ''checkbox''), ''value'');'...
+% commandN1PCA = [ 'tmpstatus = get( findobj(''parent'', fig, ''Style'', ''checkbox''), ''value'');'...
 %     'A = fliplr([tmpstatus{:}]);'...
 %     'EEG.reject.gcompreject(' num2str(chanorcomp(1)) ' : ' num2str(chanorcomp(end)) ' ) = A;'...
 %     'EEG = eegh(com, EEG);'...
-%     'close(gcf);'...
+%     'close(fig);'...
 %     'IC = size(A,2) - sum(A) - 1;'...
 %     '[EEG,com] = quick_PCA(EEG,IC)'];
 %     
-% rjandpca  = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', GUIBUTTONCOLOR, 'string', 'Reject & N-1 PCA', 'Units','Normalized', 'Position', [65 -10 15 6].*s+q, 'callback', commandN1PCA);
+% rjandpca  = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', GUIBUTTONCOLOR, 'string', 'Reject & N-1 PCA', 'Units','Normalized', 'Position', [65 -10 15 6].*s+q, 'callback', commandN1PCA);
 
 %% Just Reject & Remove button
 % --------- 
-commandReject = [ 'tmpstatus = get( findobj(''parent'', gcf, ''Style'', ''checkbox''), ''value'');'...
+commandReject = [ 'tmpstatus = get( findobj(''parent'', fig, ''Style'', ''checkbox''), ''value'');'...
         'A = fliplr([tmpstatus{:}]);'...
  		'EEG.reject.gcompreject(' num2str(chanorcomp(1)) ' : ' num2str(chanorcomp(end)) ' ) = A;'...
         '[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);'...
@@ -588,30 +588,30 @@ commandReject = [ 'tmpstatus = get( findobj(''parent'', gcf, ''Style'', ''checkb
         '[EEG,com] = pop_subcomp(EEG, mybadcomps, 0);'...
         'EEG = eegh(com, EEG);'...
         'end;'...
-        'close(gcf);'...
+        'close(fig);'...
         'eeglab redraw;'];
     
- rej  = uicontrol(gcf, 'Style', 'pushbutton', 'string', 'Remove Components', 'backgroundcolor', GUIBUTTONCOLOR, 'Units','Normalized', 'Position',[80 -10 15 6].*s+q);
+ rej  = uicontrol(fig, 'Style', 'pushbutton', 'string', 'Remove Components', 'backgroundcolor', GUIBUTTONCOLOR, 'Units','Normalized', 'Position',[80 -10 15 6].*s+q);
  set( rej, 'callback', commandReject);
 
 %% Just Reject button
 % --------- 
-  	commandSelect = [ 'tmpstatus = get( findobj(''parent'', gcf, ''Style'', ''checkbox''), ''value'');'...
+  	commandSelect = [ 'tmpstatus = get( findobj(''parent'', fig, ''Style'', ''checkbox''), ''value'');'...
         'A = fliplr([tmpstatus{:}]);'...
  		'EEG.reject.gcompreject(' num2str(chanorcomp(1)) ' : ' num2str(chanorcomp(end)) ' ) = A;'...
         '[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);'...
         'EEG = eegh(com, EEG);'...
-        'close(gcf);'...
+        'close(fig);'...
         'eeglab redraw;'];
 
-%     okcommand = ['tmpstatus = get( findobj(''parent'', gcf, ''tag'', ''rejstatus''), ''value'');'...
+%     okcommand = ['tmpstatus = get( findobj(''parent'', fig, ''tag'', ''rejstatus''), ''value'');'...
 %         'tmpstatus = fliplr(transpose(cat(tmpstatus{:,:})))']
 
 % tmpstatus = [];
-% okcommand = ['tmpstatus = get( findobj(''parent'', gcf, ''tag'', ''rejstatus''), ''value'');']
+% okcommand = ['tmpstatus = get( findobj(''parent'', fig, ''tag'', ''rejstatus''), ''value'');']
 %     %'EEG.reject.gcompreject(' num2str(chanorcomp) ') = tmpstatus;' ];
 
-ok  = uicontrol(gcf, 'Style', 'pushbutton', 'string', 'Add Comps to Rej list', 'backgroundcolor', GUIBUTTONCOLOR, 'Units','Normalized', 'Position',[95 -10 15 6].*s+q);
+ok  = uicontrol(fig, 'Style', 'pushbutton', 'string', 'Add Comps to Rej list', 'backgroundcolor', GUIBUTTONCOLOR, 'Units','Normalized', 'Position',[95 -10 15 6].*s+q);
 
  if isempty(newcommand) 
     set( ok, 'callback', commandSelect);
@@ -624,13 +624,13 @@ end
 % -------------
 commandClear = {@selectall,0};
         
-clearComp = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Clear Values', 'Units','Normalized','Position',[0 -10 10 6].*s+q, 'callback', commandClear');
+clearComp = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Clear Values', 'Units','Normalized','Position',[0 -10 10 6].*s+q, 'callback', commandClear');
 
 % SELECT ALL button
 % -------------
 commandSelAll = {@selectall,1};
         
-selectAll = uicontrol(gcf, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Select All', 'Units','Normalized','Position',[10 -10 10 6].*s+q, 'callback', commandSelAll');
+selectAll = uicontrol(fig, 'Style', 'pushbutton', 'backgroundcolor', DEFAULT_OFF_COLOR, 'string', 'Select All', 'Units','Normalized','Position',[10 -10 10 6].*s+q, 'callback', commandSelAll');
 
 %% com for eegh
 
@@ -661,26 +661,26 @@ function selectall(src,evt,value)
     
     
     % --- click or unclick the tag
-    %clickVal = get(findobj(gcf,'Style','checkbox));
+    %clickVal = get(findobj(fig,'Style','checkbox));
     
-    set(findobj(gcf,'Style','checkbox'),'Value', value);
+    set(findobj(fig,'Style','checkbox'),'Value', value);
     
     % --- turn button color red or green
     
     clickVal = abs(value);
     
     % --- get all component buttons
-    all_buttons = findobj(gcf,'Style','pushbutton');
+    all_buttons = findobj(fig,'Style','pushbutton');
     % --- 9 is the number of buttons on the end of the page! If I add more buttons
     % IF I AD MORE BUTTONS 9 NEEDS TO CHANGE!
     
     comp_buttons = all_buttons(9:end);
     
     if clickVal == 1
-        %set(findobj(gcf,'Style','checkbox'),'BackgroundColor',[1 .5 .5])
+        %set(findobj(fig,'Style','checkbox'),'BackgroundColor',[1 .5 .5])
         set(comp_buttons,'BackgroundColor',[1 .5 .5])
     else
-        %set(findobj(gcf,'Style','checkbox'),'BackgroundColor',[.75 1 .75])
+        %set(findobj(fig,'Style','checkbox'),'BackgroundColor',[.75 1 .75])
         set(comp_buttons,'BackgroundColor',[.75 1 .75])
     end
 
@@ -691,21 +691,21 @@ function checkbox(src,evt,index,clicked_box)
         clicked_box = 0;
     end
     % --- click or unclick the tag
-    clickVal = get(findobj(gcf,'Tag',index),'Value');
+    clickVal = get(findobj(fig,'Tag',index),'Value');
     if clicked_box == 0
         clickVal = abs(clickVal-1);
     end
 
-    set(findobj(gcf,'Tag',index),'Value', clickVal);
+    set(findobj(fig,'Tag',index),'Value', clickVal);
     
     % --- turn button color red or green
     
     if clickVal == 1
-        %set(findobj(gcf,'Style','checkbox'),'BackgroundColor',[1 .5 .5])
-        set(findobj(gcf,'Tag',strcat('comp',index)),'BackgroundColor',[1 .5 .5])
+        %set(findobj(fig,'Style','checkbox'),'BackgroundColor',[1 .5 .5])
+        set(findobj(fig,'Tag',strcat('comp',index)),'BackgroundColor',[1 .5 .5])
     else
-        %set(findobj(gcf,'Style','checkbox'),'BackgroundColor',[.75 1 .75])
-        set(findobj(gcf,'Tag',strcat('comp',index)),'BackgroundColor',[.75 1 .75])
+        %set(findobj(fig,'Style','checkbox'),'BackgroundColor',[.75 1 .75])
+        set(findobj(fig,'Tag',strcat('comp',index)),'BackgroundColor',[.75 1 .75])
     end
 
 end
