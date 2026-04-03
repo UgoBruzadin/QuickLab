@@ -9,8 +9,8 @@ end
 try g = get(fig,'UserData'); catch return; end
 %g = get(fig,'UserData');
 
-ax1 = findobj('tag','backeeg','parent',fig);
-ax2 = findobj('tag','eegaxis','parent',fig);
+ax1 = findobj(fig,'tag','backeeg');
+ax2 = findobj(fig,'tag','eegaxis');
 
 tmppos = get(ax1, 'currentpoint');
 
@@ -58,7 +58,7 @@ if point_is_valid
         case 'pagedown'
             draw_data([],[],fig,4,[],g);
         case {'home' 'end'}
-            EPosition = findobj('tag','EPosition','parent',fig);
+            EPosition = findobj(fig,'tag','EPosition');
             id=find(ismember({'home' 'end'},evnt.Key));
             if g.trialstag == -1
                 limi=[g.limits(1)/1000 ceil(g.limits(2)/1000-g.winlength)];
@@ -155,8 +155,8 @@ if point_is_valid
         %mouse_motion([],[],varargin{:})
     end
 %else
-%     ax1 = findobj('tag','backeeg','parent',fig);
-%     ax2 = findobj('tag','eegaxis','parent',fig);
+%     ax1 = findobj(fig,'tag','backeeg');
+%     ax2 = findobj(fig,'tag','eegaxis');
 %
 %     modifiers = get(fig,'currentModifier');
 %     switch evnt.Key

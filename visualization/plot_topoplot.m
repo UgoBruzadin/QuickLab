@@ -7,9 +7,9 @@ if EEG.plotchannels == 1
     if ~isstruct(g.eloc_file) || ~isfield(g.eloc_file, 'theta') || isempty( [ g.eloc_file.theta ])
         return;
     end
-    ax1 = findobj('tag','backeeg','parent',fig);
+    ax1 = findobj(fig,'tag','backeeg');
     tmppos = get(ax1, 'currentpoint');
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+    ax1 = findobj(fig,'tag','eegaxis'); % axes handle
     % plot vertical line
     %yl = ylim(ax1);
     %plot(ax1, [ tmppos tmppos ], yl, 'color', [0.8 0.8 0.8]);
@@ -72,9 +72,9 @@ if EEG.plotchannels == 1
         set(fig,'Color',BackColor);
     end
 else
-    %     ax1 = findobj('tag','backeeg','parent',fig);
+    %     ax1 = findobj(fig,'tag','backeeg');
     %     tmppos = get(ax1, 'currentpoint');
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+    ax1 = findobj(fig,'tag','eegaxis'); % axes handle
     tmppos = get(ax1, 'currentpoint');
     % plot vertical line
     %yl = ylim(ax1);

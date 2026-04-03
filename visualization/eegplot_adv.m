@@ -1075,8 +1075,8 @@ else
       %mouse_motion(varargin)
       
       figh = findobj('tag','eegplot_adv');
-      ax0 = findobj('tag','backeeg','parent',figh);
-      ax1 = findobj('tag','eegaxis','parent',figh);
+      ax0 = findobj(figh,'tag','backeeg');
+      ax1 = findobj(figh,'tag','eegaxis');
 
       A = findobj('Style','text');
       B = findobj('Tag','Eelec');
@@ -1155,7 +1155,7 @@ else
 %    eegplot_w3('updateslider', fig);
     eegplot_adv('drawp',0);	
 %    eegplot_adv('scaleeye', [], fig);
-    ax2 = findobj('tag','eegaxis','parent',fig);
+    ax2 = findobj(fig,'tag','eegaxis');
     %change_scale([],[],fig,4,ax2);
     
   case 'saveandtag'
@@ -1177,7 +1177,7 @@ else
   case 'TBT'
       g = get(fig,'UserData');
       g = eegplot_adv_methods('TBT', g);
-      ax2 = findobj('tag','eegaxis','parent',fig);
+      ax2 = findobj(fig,'tag','eegaxis');
       change_scale([],[],fig,4,ax2);
       draw_background
       eegplot_adv('drawp',0);
@@ -1185,7 +1185,7 @@ else
   case 'QUICKLAB'
       g = get(fig,'UserData');
       g = eegplot_adv_methods('QUICKLAB', g);
-      ax2 = findobj('tag','eegaxis','parent',fig);
+      ax2 = findobj(fig,'tag','eegaxis');
       change_scale([],[],fig,4,ax2);
     if g.EEG.plotchannels == 1
         eegplot_adv('SWITCH');
@@ -1201,7 +1201,7 @@ else
   
   case 'ICLABEL'
       g = get(fig,'UserData');
-      ax2 = findobj('tag','eegaxis','parent',fig);
+      ax2 = findobj(fig,'tag','eegaxis');
       g = eegplot_adv_methods('ICLABEL', g);
       change_scale([],[],fig,4,ax2);
 
@@ -1307,7 +1307,7 @@ else
    set(findobj('tag','NumChan'),'String',num2str(g.dispchans));
 
    set(fig, 'UserData', g);
-    ax1 = findobj('tag','eegaxis','parent',fig);
+    ax1 = findobj(fig,'tag','eegaxis');
     try
     set(ax1,...
     'YTick', [0:g.spacing:g.chans*g.spacing],...
@@ -1317,7 +1317,7 @@ else
 
 % update scaling eye (I) if it exists
 % -----------------------------------
-eyeaxes = findobj('tag','eyeaxes','parent',fig);
+eyeaxes = findobj(fig,'tag','eyeaxes');
 if ~isempty(eyeaxes)
     eyetext = findobj('type','text','parent',eyeaxes,'tag','thescalenum');
     set(eyetext,'string',num2str(g.spacing,4))
@@ -1410,7 +1410,7 @@ end
 		error('no such file');
 	end
 
-	AXH0 = findobj('tag','eegaxis','parent',fig);
+	AXH0 = findobj(fig,'tag','eegaxis');
 	eegplot_adv('setelect',[ inputpath inputname ],AXH0);
 	return;
   
@@ -1419,7 +1419,7 @@ end
     
     g = get(fig,'UserData');
     if nargin < 3
-        axeshand = findobj('tag','eegaxis','parent',fig);
+        axeshand = findobj(fig,'tag','eegaxis');
     else 
         axeshand = p2;
     end
@@ -1465,7 +1465,7 @@ end
     % figh = get(obj,'Parent');
 
     if ~isempty(obj)
-		eyeaxes = findobj('tag','eyeaxes','parent',figh);
+		eyeaxes = findobj(figh,'tag','eyeaxes');
 		children = get(eyeaxes,'children');
 		if ischar(obj)
 			if strcmp(obj, 'off')
@@ -1491,11 +1491,11 @@ end
         end
     end
 	
-	eyeaxes = findobj('tag','eyeaxes','parent',figh);
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+	eyeaxes = findobj(figh,'tag','eyeaxes');
+    ax1 = findobj(fig,'tag','eegaxis'); % axes handle
 	YLim = double(get(ax1, 'ylim'));
     
-	ESpacing = findobj('tag','ESpacing','parent',figh);
+	ESpacing = findobj(figh,'tag','ESpacing');
 	g.spacing= str2num(get(ESpacing,'string'));
 	
 	axes(eyeaxes); cla; axis off;
@@ -1509,7 +1509,7 @@ end
 	plot(Xl(3,:),Yl(3,:),'color',DEFAULT_AXIS_COLOR,'clipping','off', 'tag','eyeline');
     set(eyeaxes, 'tag', 'eyeaxes');
 
-    ax1 = findobj('tag','eegaxis','parent',figh);
+    ax1 = findobj(figh,'tag','eegaxis');
     try
     set(ax1,...
     'YTick', [0:g.spacing:g.chans*g.spacing],...
@@ -1542,8 +1542,8 @@ end
  
    case 'zoom' % if zoom
       fig = varargin{1};
-      ax1 = findobj('tag','eegaxis','parent',fig); 
-      ax2 = findobj('tag','backeeg','parent',fig); 
+      ax1 = findobj(fig,'tag','eegaxis'); 
+      ax2 = findobj(fig,'tag','backeeg'); 
       tmpxlim  = get(ax1, 'xlim');
       tmpylim  = get(ax1, 'ylim');
       tmpxlim2 = get(ax2, 'xlim');
@@ -1553,17 +1553,17 @@ end
       % deal with abscissa
       % ------------------
       if g.trialstag ~= -1
-          Eposition = str2num(get(findobj('tag','EPosition','parent',fig), 'string'));
+          Eposition = str2num(get(findobj(fig,'tag','EPosition'), 'string'));
           g.winlength = (tmpxlim(2) - tmpxlim(1))/g.trialstag;
           Eposition = Eposition + (tmpxlim(1) - tmpxlim2(1)-1)/g.trialstag;
           Eposition = round(Eposition*1000)/1000;
-          set(findobj('tag','EPosition','parent',fig), 'string', num2str(Eposition));
+          set(findobj(fig,'tag','EPosition'), 'string', num2str(Eposition));
       else
-          Eposition = str2num(get(findobj('tag','EPosition','parent',fig), 'string'))-1;
+          Eposition = str2num(get(findobj(fig,'tag','EPosition'), 'string'))-1;
           g.winlength = (tmpxlim(2) - tmpxlim(1))/g.srate;	
           Eposition = Eposition + (tmpxlim(1) - tmpxlim2(1)-1)/g.srate;
           Eposition = round(Eposition*1000)/1000;
-          set(findobj('tag','EPosition','parent',fig), 'string', num2str(Eposition+1));
+          set(findobj(fig,'tag','EPosition'), 'string', num2str(Eposition+1));
       end 
       
       % deal with ordinate
@@ -1589,7 +1589,7 @@ end
 	case 'updateslider' % if zoom
       fig = varargin{1};
       g = get(fig,'UserData');
-      sliider = findobj('tag','eegslider','parent',fig);
+      sliider = findobj(fig,'tag','eegslider');
       if g.elecoffset < 0
          g.elecoffset = 0;
       end
@@ -1722,9 +1722,9 @@ end
           %     if ~isstruct(g.eloc_file) || ~isfield(g.eloc_file, 'theta') || isempty( [ g.eloc_file.theta ])
           %         return;
           %     end
-          %     ax1 = findobj('tag','backeeg','parent',fig);
+          %     ax1 = findobj(fig,'tag','backeeg');
           %     tmppos = get(ax1, 'currentpoint');
-          %     ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+          %     ax1 = findobj(fig,'tag','eegaxis'); % axes handle
           %     % plot vertical line
           %     %yl = ylim(ax1);
           %     %plot(ax1, [ tmppos tmppos ], yl, 'color', [0.8 0.8 0.8]);
@@ -1974,7 +1974,7 @@ function g = RESET()
   
    % store and draw data
    set(fig,'UserData',g);
-   ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+   ax1 = findobj(fig,'tag','eegaxis'); % axes handle
    set(ax1,'UserData',g.data);
 
    % ONE OF THESE LOWER FUNCTIONS - PROBABLY WHERE THERE IS A BUG! UGO BUG 12-19-2022

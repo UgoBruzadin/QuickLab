@@ -38,11 +38,11 @@ g.thinking = 0;
             draw_background([],[],fig,g);
         end
     else
-      hh = varargin{6}; % h = findobj('tag','Etime','parent',fig);
+      hh = varargin{6}; % h = findobj(fig,'tag','Etime');
       if ~isnumeric(hh) && isobject(hh) && isvalid(hh)
-        ax1 = varargin{5};% ax1 = findobj('tag','eegaxis','parent',fig);
-        hv = varargin{7}; % hh = findobj('tag','Evalue','parent',fig);
-        he = varargin{8}; % hh = findobj('tag','Eelec','parent',fig);  % put electrode in the box
+        ax1 = varargin{5};% ax1 = findobj(fig,'tag','eegaxis');
+        hv = varargin{7}; % hh = findobj(fig,'tag','Evalue');
+        he = varargin{8}; % hh = findobj(fig,'tag','Eelec');  % put electrode in the box
         if g.trialstag ~= -1
             point_is_valid=tmppos(1) >= 0 && tmppos(1) < g.winlength*g.trialstag;
         else

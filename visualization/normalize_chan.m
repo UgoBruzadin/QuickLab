@@ -9,7 +9,7 @@ end
 
 hmenu = findobj(fig, 'Tag', 'Normalize_menu');
 hbutton = findobj(fig, 'Tag', 'Norm');
-ax1 = findobj('tag','eegaxis','parent',fig);
+ax1 = findobj(fig,'tag','eegaxis');
 data = get(ax1,'UserData');
 
 if isempty(g.datastd)
@@ -26,7 +26,7 @@ if g.normed == 1
         end
     end
     set(hbutton,'string', 'Norm');
-    try set(findobj('tag','ESpacing','parent',fig),'string',num2str(g.oldspacing)); catch; end
+    try set(findobj(fig,'tag','ESpacing'),'string',num2str(g.oldspacing)); catch; end
 else
     g.datastd = std(data(:,1:min(1000,g.frames)),[],2);
 

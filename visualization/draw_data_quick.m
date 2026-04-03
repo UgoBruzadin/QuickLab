@@ -2,7 +2,7 @@
 
 function draw_data_quick(figh,g,channel,winrej,tmpcolor)
 %tic
-ax1 = findobj('tag','eegaxis','parent',figh);
+ax1 = findobj(figh,'tag','eegaxis');
 
 data = get(ax1,'UserData');
 

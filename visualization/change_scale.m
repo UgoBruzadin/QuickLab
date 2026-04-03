@@ -21,7 +21,7 @@ function change_scale(varargin)
     if nargin >= 5
         ax1 = varargin{5};
     else
-        ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+        ax1 = findobj(fig,'tag','eegaxis'); % axes handle
     end
 
     g = get(fig,'UserData');
@@ -31,8 +31,8 @@ function change_scale(varargin)
         return;
     end
     data = get(ax1, 'userdata');
-    ESpacing = findobj('tag','ESpacing','parent',fig);   % ui handle
-    EPosition = findobj('tag','EPosition','parent',fig); % ui handle
+    ESpacing = findobj(fig,'tag','ESpacing');   % ui handle (searches all descendants)
+    EPosition = findobj(fig,'tag','EPosition'); % ui handle
 
     % removing letters from text.
     ESpacing2 = ESpacing.String;
@@ -91,7 +91,7 @@ function change_scale(varargin)
 
     % update scaling eye (I) if it exists
     % -----------------------------------
-    eyeaxes = findobj('tag','eyeaxes','parent',fig);
+    eyeaxes = findobj(fig,'tag','eyeaxes');
     if ~isempty(eyeaxes)
       eyetext = findobj('type','text','parent',eyeaxes,'tag','thescalenum');
       set(eyetext,'string',num2str(g.spacing,4))

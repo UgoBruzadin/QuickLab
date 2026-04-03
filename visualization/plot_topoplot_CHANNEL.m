@@ -16,9 +16,9 @@ end
         g.eloc_file = EEG.chanlocs(:);
         %return;
     end
-    ax1 = findobj('tag','backeeg','parent',fig);
+    ax1 = findobj(fig,'tag','backeeg');
     tmppos = get(ax1, 'currentpoint');
-    ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+    ax1 = findobj(fig,'tag','eegaxis'); % axes handle
 
     if g.trialstag ~= -1 % time in second or in trials
         multiplier = g.trialstag;

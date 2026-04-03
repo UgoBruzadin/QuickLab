@@ -51,7 +51,7 @@ function draw_data(varargin)
         ax1 = varargin{7};
     end
     if isempty(ax1)
-        ax1 = findobj('tag','eegaxis','parent',figh); % axes handle
+        ax1 = findobj(figh,'tag','eegaxis'); % axes handle
     end
 
     if nargin >= 8
@@ -65,8 +65,8 @@ function draw_data(varargin)
 
     %axes(ax1);
     data = get(ax1,'UserData');
-    ESpacing  = findobj('tag','ESpacing', 'parent',figh); % ui handle
-    EPosition = findobj('tag','EPosition','parent',figh); % ui handle
+    ESpacing  = findobj(figh,'tag','ESpacing');  % ui handle (searches all descendants)
+    EPosition = findobj(figh,'tag','EPosition'); % ui handle
     if ~isempty(EPosition) && ~isempty(ESpacing)
         EPosition_new = str2num(get(EPosition,'string'));
         if ~isempty(EPosition_new)

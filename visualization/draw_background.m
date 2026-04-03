@@ -19,7 +19,7 @@ if ~isfield(g,'trialstag')
 end
 
 ax0 = findobj(fig,'tag','backeeg','parent',fig); % axes handle
-ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
+ax1 = findobj(fig,'tag','eegaxis'); % axes handle
 
 % compare versions once, because it slows down drawing
 verLessThan_matlab_9 = ql_vercheck('matlab', '9.0.0');

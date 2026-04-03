@@ -16,7 +16,7 @@ end
 %show_mocap_timer = timerfind('tag','mocapDisplayTimer'); if ~isempty(show_mocap_timer),  end% nima
 SelectionType=get(fig, 'SelectionType');
 if ismember(SelectionType, {'normal', 'alt'})
-    ax1 = findobj('tag','backeeg','parent',fig);
+    ax1 = findobj(fig,'tag','backeeg');
     tmppos = get(ax1, 'currentpoint');
     g = get(fig,'UserData'); % get data of backgroung image {g.trialstag g.winrej incallback}
     g.thinking = 0;
@@ -38,7 +38,7 @@ if ismember(SelectionType, {'normal', 'alt'})
                     Allwin = (g.winrej(:,1) < lowlim+tmppos(1)) & (g.winrej(:,2) > lowlim+tmppos(1));
                 end
                 if strcmp(SelectionType,'alt') || (any(Allwin) && g.setelectrode)
-                    ax2 = findobj('tag','eegaxis','parent',fig);
+                    ax2 = findobj(fig,'tag','eegaxis');
                     tmppos = get(ax2, 'currentpoint');
                     tmpelec = g.chans + 1 - round(tmppos(1,2) / g.spacing);
                     tmpelec = min(max(tmpelec, 1), g.chans);
