@@ -73,7 +73,11 @@ else
     g.compare.tempfile = fullfile(tempdir, ...
         sprintf('quicklab_pre_%s.mat', datestr(now, 'yyyymmdd_HHMMSS')));
     try
-        save(g.compare.tempfile, 'pre_save', '-v7.3');
+        if ql_isoctave()
+            save(g.compare.tempfile, 'pre_save', '-v7'); % Octave: v7 format (no HDF5 partial read anyway)
+        else
+            save(g.compare.tempfile, 'pre_save', '-v7.3'); % MATLAB: HDF5 for matfile() partial reads
+        end
         g.compare.storage = 'tempfile';
         fprintf('Compare: temp file storage at %s (%.1f%% changed)\n', ...
             g.compare.tempfile, pct_changed);

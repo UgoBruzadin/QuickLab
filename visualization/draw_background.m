@@ -22,7 +22,7 @@ ax0 = findobj(fig,'tag','backeeg','parent',fig); % axes handle
 ax1 = findobj('tag','eegaxis','parent',fig); % axes handle
 
 % compare versions once, because it slows down drawing
-verLessThan_matlab_9 = ismatlab && verLessThan('matlab','9.0.0');
+verLessThan_matlab_9 = ql_vercheck('matlab', '9.0.0');
 
 % Plot data and update axes
 if verLessThan_matlab_9

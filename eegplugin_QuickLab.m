@@ -32,6 +32,9 @@ addpath(fullfile(pluginDir, 'processing'));
 addpath(fullfile(pluginDir, 'visualization'));
 addpath(fullfile(pluginDir, 'utils'));
 
+% --- Check MATLAB/Octave compatibility
+ql_compat;
+
 % --- QuickLab supermenu placeholder
 supermenu = uimenu(fig, 'label', 'QuickLab');
 

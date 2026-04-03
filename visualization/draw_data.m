@@ -61,7 +61,7 @@ function draw_data(varargin)
     end
 
     % compare versions once, because it slows down drawing
-    verLessThan_matlab_9 = ismatlab && verLessThan('matlab','9.0.0');
+    verLessThan_matlab_9 = ql_vercheck('matlab', '9.0.0');
 
     %axes(ax1);
     data = get(ax1,'UserData');
