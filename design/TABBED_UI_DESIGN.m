@@ -93,13 +93,89 @@
 %    - The tab stays visible but greyed out with an explanation
 %    - User can dismiss to free the memory from EEGpre
 %
-%  Memory management:
-%    - g.EEGpre stores a COPY of EEG.data before the operation
-%    - This doubles memory use while Compare is active
-%    - [Dismiss] button clears g.EEGpre and hides the Compare tab
-%    - Auto-cleared when a new non-comparable operation runs
-%    - For large datasets, store only the visible window range
-%      (lazy comparison: compute diff on-the-fly during scroll)
+%  Memory management — LIGHTWEIGHT APPROACH:
+%  ─────────────────────────────────────────────
+%  Instead of keeping a full copy of the data in memory, use a
+%  combination of strategies from lightest to heaviest:
+%
+%  Strategy 1: DIFF-ONLY STORAGE (preferred, ~0.1-5% of data size)
+%  ──────────────────────────────────────────────────────────────────
+%  Most operations only change a small fraction of the data. Store
+%  only what changed:
+%
+%    % After an operation, compute the sparse diff:
+%    diff_data = post.data - pre.data;
+%    changed_mask = abs(diff_data) > eps;  % find non-zero elements
+%    pct_changed = 100 * nnz(changed_mask) / numel(diff_data);
+%
+%    if pct_changed < 30  % sparse enough to store efficiently
+%        g.compare.diff_sparse = sparse(diff_data);  % MATLAB sparse matrix
+%        g.compare.storage = 'sparse';
+%    else
+%        % Fall back to temp file (Strategy 2)
+%    end
+%
+%  To reconstruct pre data: pre.data = post.data - full(g.compare.diff_sparse)
+%  Cost: For partial interpolation of 3 channels over 2 seconds in a
+%  64ch x 500k sample dataset, sparse diff stores ~0.1% of the data.
+%
+%  Strategy 2: TEMP FILE ON DISK (medium, no RAM cost)
+%  ──────────────────────────────────────────────────────
+%  Save pre-data to a temporary MAT file. MATLAB's matfile() allows
+%  reading slices without loading the whole file:
+%
+%    % Before operation:
+%    g.compare.tempfile = [tempdir 'quicklab_pre_' g.EEG.filename '.mat'];
+%    save(g.compare.tempfile, '-v7.3', 'data');  % HDF5 format
+%
+%    % During scroll (lazy load only visible window):
+%    mf = matfile(g.compare.tempfile);
+%    pre_window = mf.data(:, lowlim:highlim);  % partial read!
+%
+%    % On dismiss or close:
+%    delete(g.compare.tempfile);
+%
+%  Cost: Disk write time (~1-3s for 500MB), but zero RAM.
+%  The -v7.3 (HDF5) format supports partial reads via matfile().
+%
+%  Strategy 3: UNDO STACK (most powerful, reusable)
+%  ──────────────────────────────────────────────────
+%  Instead of storing pre-data, store the INVERSE OPERATION:
+%
+%    g.undo_stack{end+1} = struct( ...
+%        'operation', 'interp_channels', ...
+%        'channels',  [12 34], ...
+%        'regions',   [1000 5000; 8000 12000], ...
+%        'pre_data',  pre.data([12 34], 1000:5000), ...  % only changed channels/regions
+%        'timestamp', now);
+%
+%  This stores only the minimal data needed to reverse the operation.
+%  For channel interpolation: only the original values of the changed
+%  channels in the changed time ranges (~0.01% of total data).
+%  For component removal: store the removed component activations.
+%
+%  Which strategy to use:
+%    - Partial interpolation: Strategy 1 (sparse diff) or 3 (undo stack)
+%    - Component removal: Strategy 1 (most channels change) or 2 (temp file)
+%    - Re-reference: Strategy 1 (all channels change but predictably)
+%    - BSS correction: Strategy 2 (many channels change unpredictably)
+%    - Auto-select based on pct_changed threshold
+%
+%  g.compare struct fields:
+%    .storage       'none'|'sparse'|'tempfile'|'undo'
+%    .diff_sparse   sparse matrix (Strategy 1)
+%    .tempfile      path string (Strategy 2)
+%    .undo_entry    struct (Strategy 3)
+%    .compat        1 if structure matches, 0 if not
+%    .mode          'off'|'overlay'|'difference'
+%    .msg           status text
+%    .timestamp     when the snapshot was taken
+%
+%  Cleanup:
+%    - [Dismiss] clears g.compare and deletes any temp file
+%    - Figure CloseRequestFcn deletes temp files
+%    - New operation overwrites previous compare data
+%    - Temp files use tempdir so OS cleans up on reboot
 %
 %  When Compare triggers:
 %    - APPLY (eeg_eegrej_adv): after interpolation/rejection
@@ -412,48 +488,104 @@
 %
 %  New fields added to eegplot_defaults.m:
 %
-%  g.EEGpre          = []     % Snapshot of EEG before last operation
-%  g.compare_mode    = 'off'  % 'off', 'overlay', 'difference'
-%  g.compare_compat  = 0      % 1 if pre/post structure matches
-%  g.compare_msg     = ''     % Explanation when not compatible
+%  g.compare = struct( ...
+%      'storage',      'none', ...  % 'none'|'sparse'|'tempfile'|'undo'
+%      'diff_sparse',  [], ...      % sparse matrix of (post - pre)
+%      'tempfile',     '', ...      % path to temp MAT file
+%      'undo_entry',   [], ...      % undo stack entry struct
+%      'compat',       0, ...       % 1 if pre/post structure matches
+%      'mode',         'off', ...   % 'off'|'overlay'|'difference'
+%      'msg',          '', ...      % status message for UI
+%      'pre_nbchan',   0, ...       % structure info from pre snapshot
+%      'pre_pnts',     0, ...
+%      'pre_trials',   0, ...
+%      'timestamp',    0);          % datenum of snapshot
 %
 %  Snapshot workflow in eegplot_adv_methods.m:
 %
 %    function g = APPLY(g)
-%        g.EEGpre = g.EEG;              % <-- snapshot BEFORE
+%        pre_data = g.EEG.data;         % <-- capture BEFORE
+%        pre_info = struct('nbchan', g.EEG.nbchan, 'pnts', g.EEG.pnts, ...
+%                          'trials', g.EEG.trials, 'srate', g.EEG.srate);
 %        ... apply changes ...
-%        g = check_compare_compat(g);   % <-- check after
+%        g = eegplot_compare_snapshot(g, pre_data, pre_info);
 %    end
 %
-%    function g = check_compare_compat(g)
-%        if isempty(g.EEGpre), return; end
-%        pre = g.EEGpre; post = g.EEG;
-%        if pre.nbchan == post.nbchan && pre.pnts == post.pnts && ...
-%           pre.trials == post.trials && pre.srate == post.srate
-%            g.compare_compat = 1;
-%            g.compare_msg = sprintf('Showing comparison: %d chans x %d pts', ...
-%                post.nbchan, post.pnts);
-%        else
-%            g.compare_compat = 0;
-%            g.compare_msg = sprintf(['Structure changed: chans %d->%d, ' ...
-%                'pts %d->%d, epochs %d->%d'], ...
-%                pre.nbchan, post.nbchan, pre.pnts, post.pnts, ...
-%                pre.trials, post.trials);
+%  eegplot_compare_snapshot.m (new utility):
+%
+%    function g = eegplot_compare_snapshot(g, pre_data, pre_info)
+%        post = g.EEG;
+%        % Check structural compatibility
+%        if pre_info.nbchan ~= post.nbchan || pre_info.pnts ~= post.pnts || ...
+%           pre_info.trials ~= post.trials || pre_info.srate ~= post.srate
+%            g.compare.compat = 0;
+%            g.compare.storage = 'none';
+%            g.compare.msg = sprintf('Structure changed: ch %d->%d, pts %d->%d, ep %d->%d', ...
+%                pre_info.nbchan, post.nbchan, pre_info.pnts, post.pnts, ...
+%                pre_info.trials, post.trials);
+%            return;
 %        end
+%
+%        % Compute diff and choose storage strategy
+%        diff_data = post.data - pre_data;
+%        pct_changed = 100 * nnz(abs(diff_data) > eps) / numel(diff_data);
+%
+%        if pct_changed < 30
+%            % Sparse storage — fast, tiny memory footprint
+%            g.compare.diff_sparse = sparse(double(diff_data));
+%            g.compare.storage = 'sparse';
+%        else
+%            % Temp file — zero RAM cost
+%            g.compare.tempfile = fullfile(tempdir, ...
+%                ['quicklab_pre_' datestr(now,'yyyymmdd_HHMMSS') '.mat']);
+%            save(g.compare.tempfile, 'pre_data', '-v7.3');
+%            g.compare.storage = 'tempfile';
+%        end
+%
+%        g.compare.compat = 1;
+%        g.compare.mode = 'overlay';  % auto-enable on new snapshot
+%        g.compare.pre_nbchan = pre_info.nbchan;
+%        g.compare.pre_pnts = pre_info.pnts;
+%        g.compare.pre_trials = pre_info.trials;
+%        g.compare.timestamp = now;
+%        g.compare.msg = sprintf('Comparison ready (%.1f%% changed, %s storage)', ...
+%            pct_changed, g.compare.storage);
 %    end
 %
 %  Draw integration (in draw_data.m):
 %
-%    if strcmp(g.compare_mode, 'overlay') && g.compare_compat
-%        % Draw pre data in faded blue behind current data
-%        predata = g.EEGpre.data;  % or icaact if component view
-%        tmp_pre = plotChannel(oldspacing,meandata,predata,g,chans,lowlim,highlim);
-%        plot(ax1, tmp_pre', 'Color', [0.3 0.5 0.9 0.4], 'LineWidth', 0.5);
-%    elseif strcmp(g.compare_mode, 'difference') && g.compare_compat
-%        % Draw difference only
-%        diffdata = data - g.EEGpre.data;
-%        tmp_diff = plotChannel(oldspacing,zeros(1,g.chans),diffdata,g,chans,lowlim,highlim);
-%        plot(ax1, tmp_diff', 'Color', [0.2 0.8 0.3], 'LineWidth', 1.0);
+%    if g.compare.compat && ~strcmp(g.compare.mode, 'off')
+%        % Reconstruct pre data for the visible window
+%        switch g.compare.storage
+%            case 'sparse'
+%                pre_window = data(:,lowlim:highlim) - ...
+%                    full(g.compare.diff_sparse(:,lowlim:highlim));
+%            case 'tempfile'
+%                mf = matfile(g.compare.tempfile);
+%                pre_window = mf.pre_data(:,lowlim:highlim);
+%        end
+%
+%        if strcmp(g.compare.mode, 'overlay')
+%            % Draw pre data faded behind current
+%            tmp_pre = plotChannel(oldspacing,meandata,pre_window,g,chans,1,size(pre_window,2));
+%            plot(ax1, tmp_pre', 'Color', [0.3 0.5 0.9 0.4], 'LineWidth', 0.5);
+%        elseif strcmp(g.compare.mode, 'difference')
+%            % Draw only the difference
+%            diff_window = data(:,lowlim:highlim) - pre_window;
+%            tmp_diff = plotChannel(oldspacing,zeros(1,g.chans),diff_window,g,chans,1,size(diff_window,2));
+%            plot(ax1, tmp_diff', 'Color', [0.2 0.8 0.3], 'LineWidth', 1.0);
+%        end
+%    end
+%
+%  Cleanup (in eegplot_compare_dismiss.m):
+%
+%    function g = eegplot_compare_dismiss(g)
+%        if strcmp(g.compare.storage, 'tempfile') && exist(g.compare.tempfile, 'file')
+%            delete(g.compare.tempfile);
+%        end
+%        g.compare = struct('storage','none','diff_sparse',[],'tempfile','', ...
+%            'undo_entry',[],'compat',0,'mode','off','msg','', ...
+%            'pre_nbchan',0,'pre_pnts',0,'pre_trials',0,'timestamp',0);
 %    end
 %
 %% ====================================================================
