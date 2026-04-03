@@ -962,6 +962,7 @@ tmprank2=sum (diag (D) > rankTolerance);
 if tmprank ~= tmprank2
     tmprank2 = min(tmprank, tmprank2);
 end
+end % end of getrank
 
 function load_directory(EEG,fig)
 
@@ -974,3 +975,4 @@ if isstruct(EEG)
     findex = find(strcmp({files.name}, EEG.filename));
     set(findobj(fig,'tag','FolderList'),'string',{files(1:end).name},'value',find(strcmp({files.name}, EEG.filename)));
 end
+end % end of load_directory
