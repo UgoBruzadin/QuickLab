@@ -1,223 +1,139 @@
-# QuickLab Python
+# QuickLab
 
-**Modern EEG visualization and preprocessing for Jupyter notebooks**
+**Advanced EEG Data Editor for EEGLAB** | MATLAB & GNU Octave
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MNE Compatibility](https://img.shields.io/badge/MNE-1.0%2B-green)](https://mne.tools/)
+QuickLab is an EEGLAB plugin that replaces the default data scroll viewer with a powerful, interactive preprocessing environment. It combines data visualization, artifact marking, component inspection, and processing into a single tabbed interface.
 
-QuickLab Python is a modern reimplementation of the popular EEGLAB QuickLab plugin, designed specifically for Jupyter notebook workflows. This is the evolution of the original MATLAB QuickLab - bringing the same powerful manual preprocessing capabilities to Python with seamless MNE-Python integration.
+> "I dreamed of a day when I did not have to interact with prompts while using EEGLAB..."
 
-> "I dreamed of a day when I did not have to interact with prompts while using EEGLAB..." - *Original QuickLab Vision*  
-> Now that vision comes to Python with modern tools and enhanced capabilities!
+## Features
 
-## ✨ Key Features
-
-- **🎯 Interactive EEG Editor**: Color-coded visualization for manual preprocessing  
-- **🧠 MNE-Python Integration**: Full compatibility with MNE data structures and workflows
-- **🤖 Automated Artifact Detection**: Multiple algorithms for identifying bad channels and segments
-- **🔍 Advanced Analysis Tools**: ICA component analysis and visualization capabilities
-- **📊 Multiple Backends**: Support for matplotlib and Plotly visualization
-- **⚡ Jupyter-Optimized**: Built specifically for notebook environments
-- **🔧 Modular Design**: Flexible architecture for custom processing pipelines
-
-## 🚀 Quick Start
-
-### Installation
-
-**Development Installation (Current):**
-```bash
-# Clone or navigate to the QuickLab directory
-cd QuickLab
-
-# Install in development mode
-pip install -e .
-
-# Test the installation
-python test_tutorial.py
-```
-
-**Future PyPI Installation:**
-```bash
-pip install quicklab-python[full]
-```
-
-### Basic Usage
-
-```python
-import mne
-from quicklab_python import EEGDataManager, EEGEditorWidget
-
-# Load your EEG data
-raw = mne.io.read_raw_fif('your_eeg_data.fif', preload=True)
-
-# Create the interactive editor widget
-editor = EEGEditorWidget(raw)
-editor.display()
-
-# Or use programmatically
-from quicklab_python.core.data_manager import SelectionType
-dm = EEGDataManager(raw)
-dm.select_channels([0, 5], SelectionType.INTERPOLATE)
-dm.apply_channel_selections()
-```
-
-### Tutorial
-
-Run the interactive tutorial notebook:
-```bash
-jupyter lab quicklab_python/examples/quickstart_tutorial.ipynb
-```
-
-## 🎨 Interactive Features
+### Interactive Data Editor (`eegplot_adv`)
+- **Tabbed workspace**: Data, Components, Spectra, and ERP views in one window
+- **Color-coded rejection**: Green = interpolation, Red = rejection, per-channel or per-epoch
+- **Partial component interpolation**: Remove artifact from a component in a specific time range while preserving data rank
+- **Pre/post comparison**: Overlay or difference view after any processing step (sparse diff storage for minimal memory cost)
+- **Built-in methods panel**: Run TBT, ICLabel, ICA, BSS, re-reference without leaving the viewer
+- **Modern dark theme**: Three color modes (Default, DarkMode, Modern)
+- **EEGLAB menu integration**: Access any EEGLAB function from within the viewer
+- **GNU Octave compatible**: Full functionality in Octave with graceful degradation
 
 ### Keyboard Shortcuts
+| Key | Action |
+|-----|--------|
+| A / D | Scroll left / right |
+| Q / E | Jump to start / end |
+| W | Toggle EEG / ICA view |
+| S | Toggle Interpolation / Rejection mode |
+| R | Normalize channels |
+| Z | Mark channel under cursor as bad |
+| V, B, N, M, H, G | Topoplot modes (variance, std, mean, etc.) |
+| +/- | Scale amplitude up / down |
+| Arrow keys | Navigate and scroll channels |
 
-- **Arrow keys**: Navigate through time and channels
-- **+/-**: Zoom amplitude scale  
-- **Mouse wheel**: Zoom time axis
-- **r**: Set selection type to "Reject"
-- **i**: Set selection type to "Interpolate"
-- **g**: Set selection type to "Good"
-- **c**: Clear all selections
+### Mouse Controls
+- **Left click**: Select epoch for rejection (red) or interpolation (green)
+- **Right click**: Mark/unmark channel as bad
+- **Middle click**: Topoplot at cursor (channels) or component properties (ICA)
+- **Scroll wheel**: Zoom time axis
 
-### Selection Modes
+### Processing Pipeline (Methods Tab)
+- **TBT (Trial-by-Trial)**: Automated artifact detection with configurable thresholds
+- **QuickLab**: ICA, BSS, re-reference, re-epoch, DIPFIT — all without prompts
+- **ICLabel**: Automatic IC classification and rejection
+- **Custom scripts**: Run any MATLAB/Octave command on the current data
 
-- **Navigate**: Browse and explore your data
-- **Select Channels**: Click to mark channels for processing  
-- **Select Time**: Drag to select time segments
-- **Multiple selection types**: Reject, interpolate, or mark as good
+### Additional Tools
+- **Viewprops+** (`pop_viewprops_adv`): Component properties with ICLabel, parallel plotting, and CORRMAP save
+- **Spectopo+** (`spectopo_ql`): Interactive frequency topoplot with click-to-inspect
+- **Quick Filter**: Highpass/lowpass without prompts
+- **Quick CORRMAP**: Fast template-based component rejection
 
-![QuickLab Python Demo](https://via.placeholder.com/800x400/2980B9/FFFFFF?text=QuickLab+Python+Interactive+Editor)
+## Installation
 
-*Modern Python interface bringing the power of the original QuickLab to Jupyter notebooks*
+### Requirements
+- EEGLAB 2019 or later
+- MATLAB R2014b+ **or** GNU Octave 6+
 
-## 📚 Documentation
+### Install
+1. Download or clone this repository into your EEGLAB `plugins/` folder:
+   ```
+   cd eeglab/plugins
+   git clone https://github.com/UgoBruzadin/QuickLab.git
+   ```
+2. Start EEGLAB. QuickLab appears in the menu bar.
 
-- **[Installation Guide](docs/installation.rst)** - Detailed setup instructions
-- **[Quick Start Tutorial](docs/quickstart.rst)** - Get started in 5 minutes  
-- **[API Reference](https://quicklab-python.readthedocs.io/)** - Complete documentation
-- **[Example Notebooks](quicklab_python/examples/)** - Interactive tutorials
+### GNU Octave
+QuickLab detects Octave automatically and adapts the UI:
+- Tabs fall back to panels if `uitabgroup` is not available
+- All processing functions work identically
+- Install the `signal` and `statistics` Octave packages for full functionality
 
-### Tutorial Notebooks
+## File Structure
 
-1. **[Quickstart Tutorial](quicklab_python/examples/quickstart_tutorial.ipynb)** - Basic usage and workflow
-2. **[Advanced Preprocessing](quicklab_python/examples/advanced_preprocessing.ipynb)** - Sophisticated preprocessing strategies
+```
+QuickLab/
+  eegplugin_QuickLab.m       Plugin entry point (EEGLAB registration)
+  QuickLabDefs.m              Configuration defaults (edit to customize)
+  gui/                        GUI popup functions (pop_*)
+  processing/                 Data processing (quick_*, par_*)
+  visualization/              Display and rendering
+    eegplot_adv.m             Main viewer (dispatch + utilities)
+    eegplot_create_ui.m       UI layout (tabbed panels + controls)
+    eegplot_adv_methods.m     Processing method dispatcher
+    draw_data.m               Channel trace rendering
+    draw_background.m         Rejection patches and events
+    eegplot_readkey.m         Keyboard handler
+    mouse_down/up/motion.m    Mouse handlers
+    quick_colormode.m         Color themes (Default/DarkMode/Modern)
+    ...
+  utils/                      Shared utilities
+    eegplot_defaults.m        g struct field definitions
+    inputdlg3.m               Shared input dialog
+    ql_isoctave.m             Octave detection
+    ql_compat.m               Compatibility layer
+    eegplot_compare_snapshot.m Pre/post comparison
+    ...
+  design/                     Design documents
+    TABBED_UI_DESIGN.m        UI architecture specification
+```
 
-Here’s a short list of functionalities added compared to Scrollplot and Scrollplot+
+## Configuration
 
-- Toggle between channel and component data (keyboard: W)
-- Toggle between rejection and interpolation (keyboard: S)
-- Scroll in data right or left (keyboard right: D, left A)
-- Go to the beginning and ending of the data (Kb: Q start E: end)
-- Normalize data (Kb: R)
-- Left click selects an epoch for rejection (red) or interpolation (green)
-- Right click selects a channel for interpolation (no channel rejection in this mode)
-  - For full interpolation: right click channel outside of any selected epoch.
-  - For partial interpolation: right click inside green selected epochs.
-  - Kb: Z on a channel select mouse-hovered channel for rejection, regardless or whether there are epochs selected or not.
-  - IMPORTANT: One can perform partial of COMPONENTS. This is extremely useful for components with unique spikes and data with small ranks (low number of components). It allows one to keep the max data rank while removing artifacts identified by the components.
-  - It's quite simple: I reject the components, but just for that selected epoch. This way, the rank is mostly untouched and the data is cleaner. Sometimes you can even GAIN rank, depending on how many components you have below the true data rank.
-- Middle click:  
-  - In Channel mode: display the headmodel at the clicked time on the right panel.
-  - In Component mode: open the component in a new figure (pop_prop_extended_ql).
-  - Kb: V, B, N, M, H, G: display various headmodel based on V: epoch Variance, B: epoch Std, N:Mean, M: MeanLog10, H: Variance difference from the rest of the data, G: Variance of the whole data.
-  - These options will help you see if this epoch is trouble or not, and what channels are creating the trouble.
-  - Headmodel and Data Matrix will trade with each other without any hiccups. 
-- Right panel: 
-1. All data information displayed on top: Channel - Reference, Frames - Frame-Rate, Epochs - Events, Start and end of epoch, ICA (Number of Components) - Max Rank
-1. Added Arrows to advance to start and end of file
-1. Added Quick way to change the number of channels to display
-1. Select Library of Functions to perform
-   1. TBT
-      1. A library of functions that select, trial by trial, based on Abnormal values (and all other EEGLAB trial rejection options) and based on given attributes, to reject or interpolate channels and epochs.
-      1. You can change the percentage of trials that require a Channel to be fully interpolated
-      1. You can change the number of channels on an epoch that selects that epoch for rejection (instead of interpolating the channels)
-      1. Detect flat line, a function from Cleanline, selects channels that are flat.
-      1. Detect channel pops is a function that I made. It allows you to run a moving window and detect changes in data variation, based on mean, std, etc. It’s very simple, very weird, but may be useful to detect channel spikes. Here are the variables:
-         0. Size of window in bins/pnts
-         0. Number of standard deviations from that epoch (is it weird IN this epoch?)
-         0. Max Rej. window: A maximum size of change window. Helps reduce rejection of slow channels or Alpha/Theta waves. If the “spike” change is larger than 100 bins (default) it will consider it a normal change, not a spike.
-         0. Select specific channel or components . [] = all chans/comps
-         0. Options: select between mean, median, std. dev, and a few more options. 
-         0. In conclusion, it identifies channels that have high mean (or median) velocity/acceleration of change that surpass a number of standard deviations based on that window, based on that epoch. I.e. spike detection.
-   1. QuickLab
-      1. ICA
-         1. Number of components, [] for max rank
-         2. Icatype
-         3. Display components with viewprops+: 0 or 1
-      1. BSS EMG (from AAR library)
-         0. Window size and window shift
-      1. Re-reference (beta)
-         0. Select a channel to reference to, or select AVG LE or Original (beta)
-      1. Re-epoch (beta)
-         0. Time 1 and time 2
-      1. DipFit(par)
-         0. Number of components, number of dipoles (1 or 2)
-      1. Any script
-         0. This is marvelous: run ANY SCRIPT on the current data. Have a function that you want to run? Copy, paste, and run. As long as it outputs EEG, it will work.
-   1. IClabel
-      1. Runs all IClabel functions for component rejection. The best one is all but brain at 80% or more. This can be used for a quick and dirty cleaning of a data.
-   1. QuickLab plots: 
-      1. For more nuanced selection of plots of FFTs, IClabel, or Component ERP
-- A matrix displaying currently selected channels and epochs for interpolation and rejection:
-  - Red vertical lines: epoch rejection
-  - Green vertical lines: epoch selected for interpolation
-  - Black lines: partial channels to be interpolated in each epoch
-  - Yellow lines: full channel interpolation
-  - You can click on a highlighted epoch and it will take you to that epoch!
-- Right panel buttons: 
-  - Apply Changes:
-    - Runs a program (eegrej\_adv) that interpolates and reject and selected channels OR components (it does not run both at the same time). It saves a backup of the file with all selections, and creates a new file with a small description of changes made (number of channels, components, and epochs rejected).
-  - FFT(avg): allows you to click on a time and it will display the headmodel at that time.
-  - IClabel: runs IClabel and opens Viewprops+, which has been modified to allow you to select components for rejection by click the tick box OR by clicking on the headmodel
-    - Viewprops+ plots ALL components at once, in parallel (if par is available)
-    - You can save components to use on CORRMAP
-    - You can reject components and run a PCA reducing number of components by 1
-    - Plotted components have the option for time-frequency display
-    - Dipfitted components have the strongest BA area at the name
-    - Plot the component scroll
-  - Show ICA/Show Channel: toggle between ICA and Channel data
-  - Hide Epoch: If data is epoched, you can toggle the epoch display on or off. 
-    - It doesn’t remove the epoching, just display the data AS IF it is not epoched. 
-    - This allows one to interpolate spikes of data that are smaller than an epoch, if necessary.
-    - Useful to interpolate components that have very sharp and unique spikes that are dominating the component
-  - Interpolation Mode/Rejection Mode: toggle between interpolation and rejection.
-  - Load file from Folder: This is a list of all files in the folder. Changing this will RELOAD eegplot\_adv and a new file will be displayed. 
-  - Enter text to Add to Filename: Adding text here, then pressing Save File with Text, will automatically save the file, at the file’s folder, with the added text at the end. This way you can continue processing the data now in a new file, with a new add-on.
-  - Transfer to EEGLAB: reloads the current file in EEGLAB’s original UI.
-- Events have been changed: now you can toggle events on and off. This only removes the display of the events, not the events themselves.
-- All EEGLAB tabs are added to the UI. This theoretically allows one to perform Any EEGLAB operation on the current data. This may not work all the time, not all functions work. Some functions with display may crash, but as far as I can tell, most common functions will work. These functions are encapsulated in a way that eegplot\_adv collects the EEG output from the EEGLAB functions and plots in the UI. I have not tested all of them, so they may break. Keep me updated with any bugs and we’ll find a way to work around.
+Edit `QuickLabDefs.m` to customize:
 
-Quicklab contains a lot of other functions. Here are some:
+```matlab
+SAVEBACKUP = 1;                    % Auto-save before processing
+COLOR_MODE = 'Modern';             % 'Default', 'DarkMode', or 'Modern'
+ICATYPE = 'cudaica';               % ICA algorithm
+EEGTHRESHOLD = [-150, 150];        % Artifact threshold (uV)
+CHANNELDEFS = [1:57,59,60];        % Default channel selection
+EPOCHLENGTH = 1;                   % Recurrent epoch length (s)
+```
 
-- Edit QuickLab defaults: Not an exhaustive list, but I added here a way to change the majority of the defaults of QuickLab. It’s supposed to be suitable for anyone and anyone’s defaults, so that you can process your dataset as quickly as possible.
-- Quick Plots: Viewprops + and Spectopo_ql, as described above.
-  
-Example of Viewprops+
-![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/a84ada4f-99bc-4f37-839a-9c4108a0c379)
-Additions include selecting components for removal directly in the UI by clicking on the headmodel or in the box, as well saving the component for corrmap. All maps plotted in parallel if available, which is in general faster.
+## Rejection Matrix
 
+The rejection matrix (bottom-right) shows the current state of all epochs and channels:
+- **Red vertical lines**: Epochs marked for rejection
+- **Green vertical lines**: Epochs marked for interpolation
+- **Black marks**: Partial channel interpolation within an epoch
+- **Yellow marks**: Full channel interpolation
+- Click on any mark to navigate to that epoch
 
-Example of Spectopo_ql
-![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/d607abe7-3911-4f5f-8c0a-c0a28b2f0a78)
-Additions include display of any headmodel at any clicked frequency, as well as the frequency and power as selected on the right panel. Also, a convenient save figure button. Headmaps plotted in parallel as well.
-- Other: 
-  - FFT plots using LE or default reference. I only plot FFT using average reference as it is the most useful. LE needs to be set in default, it also may not work
-  - ERP plots+. This allows one to plot the ERP of every component, projected to a specific channel and selected from a specific event. If you need to see your components in ERP style, this is the way. Not very useful, but can give an interesting perspective on a dataset.
-  - Quick PCA: This just run a PCA using the default function (CUDAICA or BINICA or whatever you set on Quicklab Defaults). I have non-exhaustive list to quickly run a PCA from the menu without having to interact with ANY prompts.
-  - BSS menu: the defaults BSS from AAR library is incorrect and breaks the data. Here you can select to run BSS selected every 2 epochs, the full file, or full file in parallel. Basically, when BSS runs in anything BUT full file, Components become very inconsistent as they are partially rejected based on, say, every 2 epochs. Full file is the most consistent one, but it is slow, so I also added a parallel version – which runs super-fast.
-  - Quick Channel Edit: 
-    - Re-reference data to AVG
-    - Reduce channels (ignore): my personal scripts for my dissertation where I removed channels from below the crown.
-    - Quick Filter: Let’s you quickly run a highpass or lowpass on the data, without any prompts.
-  - Quick Epoch Edits:
-    - Re-epoch data every X seconds. No prompts.
-    - Un-epoch data: a simple script that removed the epoching on the data. This can be useful in special circumstances.
-  - Quick Corrmap:
-    - My own version of CORRMAP. This is made to be run on individual files. The idea is simple: You can select topoplots from components using the viewprops+. Save them in a folder. Then, you can run the corrmap rejection here. My version of Corrmap is SUPER fast, but can’t be run on STUDY as far as I know.
-    - Maps are saved in folders based on number of channels, and only run the corrmaps in the correct folder for that number of channels you selected.
-    - Runs in parallel if available.
-  - Quick Parallel Processes: Here, DipFit 1 or 2 dipoles is re-written to be run in parallel. Again, runs super-fast, with no prompts.
+## Examples
 
-There's also a dark-mode feature! Change the colors in the QuickLab Defaults for your convenience!
+![QuickLab Data Editor](Example1.png)
+
+## Contributing
+
+Bug reports and feature requests: [GitHub Issues](https://github.com/UgoBruzadin/QuickLab/issues)
+
+## License
+
+GNU General Public License v2.0 - see [LICENSE](LICENSE)
+
+## Author
+
+**Ugo Bruzadin Nunes** - INL Lab, Southern Illinois University Carbondale
+
+With contributions from the EEGLAB community and Claude (Anthropic).
