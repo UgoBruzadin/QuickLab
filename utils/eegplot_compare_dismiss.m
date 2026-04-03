@@ -1,0 +1,43 @@
+function g = eegplot_compare_dismiss(g)
+% eegplot_compare_dismiss() - Clear comparison data and free resources.
+%   Deletes temp files if any, clears sparse diffs, resets compare state.
+%
+% Usage:
+%   g = eegplot_compare_dismiss(g)
+%
+% See also: eegplot_compare_snapshot
+%
+% Author: Ugo Bruzadin Nunes
+% Copyright (C) 2021 Ugo Bruzadin Nunes
+
+if ~isfield(g, 'compare')
+    g.compare = struct('storage','none', 'diff_sparse',[], 'tempfile','', ...
+        'undo_entry',[], 'compat',0, 'mode','off', 'msg','', ...
+        'pre_nbchan',0, 'pre_pnts',0, 'pre_trials',0, 'timestamp',0);
+    return;
+end
+
+% Delete temp file if it exists
+if isfield(g.compare, 'tempfile') && ~isempty(g.compare.tempfile)
+    if exist(g.compare.tempfile, 'file')
+        try
+            delete(g.compare.tempfile);
+            fprintf('Compare: deleted temp file %s\n', g.compare.tempfile);
+        catch
+        end
+    end
+end
+
+% Reset all compare fields
+g.compare = struct( ...
+    'storage',      'none', ...
+    'diff_sparse',  [], ...
+    'tempfile',     '', ...
+    'undo_entry',   [], ...
+    'compat',       0, ...
+    'mode',         'off', ...
+    'msg',          '', ...
+    'pre_nbchan',   0, ...
+    'pre_pnts',     0, ...
+    'pre_trials',   0, ...
+    'timestamp',    0);

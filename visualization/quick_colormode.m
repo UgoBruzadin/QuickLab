@@ -103,4 +103,55 @@ switch mode
 
         BACKGROUNDCOLOR = [0.1 0.1 0.2];
 
+    case 'Modern'
+
+        % A clean, modern dark theme with high contrast data traces
+        % Inspired by VS Code / scientific visualization tools
+
+        % icadefs overrides
+        BACKCOLOR           = [0.15 0.16 0.21];
+        BACKEEGLABCOLOR     = [0.20 0.22 0.28];
+        GUIBUTTONCOLOR      = [0.25 0.27 0.33];
+        GUIPOPBUTTONCOLOR   = [0.20 0.22 0.28];
+        GUIBACKCOLOR        = [0.15 0.16 0.21];
+        GUITEXTCOLOR        = [0.85 0.87 0.90];
+        PLUGINMENUCOLOR     = [0.55 0.35 0.80];
+
+        % Figure backgrounds
+        DEFAULT_FIG_COLOR = [0.15 0.16 0.21];          % main figure bg
+        DEFAULT_FIG_COLOR2 = [0.45 0.15 0.15];         % rejection mode bg (muted red)
+        DEFAULT_PLOT_BACKGROUND = [0.10 0.11 0.15];    % axes/plot area bg (near-black)
+
+        % Buttons — flat, no 3D bevel look
+        BUTTON_COLOR = [0.25 0.27 0.33];               % default button
+        DEFAULT_ON_COLOR = [0.18 0.55 0.34];            % active/good (green)
+        DEFAULT_OFF_COLOR = [0.70 0.22 0.20];           % warning/bad (red)
+        DEFAULT_SPECIAL_COLOR = [0.85 0.65 0.13];       % special action (gold)
+        DEFAULT_SPECIAL_TEXT = [0.10 0.10 0.10];         % dark text on gold buttons
+
+        % Text and axes
+        DEFAULT_AXIS_COLOR = [0.75 0.77 0.82];          % axis lines and labels
+        DEFAULT_PLOT_COLOR = {[0.45 0.55 0.95], [0.55 0.55 0.65]};
+        DEFAULT_TRIAL_DIVISION = '--';                   % trial dividers (use axis color)
+        DEFAULT_X_AXIS = [];
+        DEFAULT_Y_AXIS = [];
+        DEFAULT_FONT_COLOR = [0.85 0.87 0.90];          % general text
+
+        % Data traces
+        DEFAULT_PLOT_LINES = [0.40 0.55 0.95];          % channel traces (blue)
+        DEFAULT_PLOT_SELECTED = [0.95 0.30 0.25];       % bad/selected channels (red)
+        DEFAULT_PLOT_TEXT = [0.85 0.87 0.90];            % text on plots
+        DEFAULT_EVENT_LINES = [0.90 0.70 0.30];         % event markers (amber)
+
+        % Rejection/interpolation window colors
+        DEFAULT_PLOT_INTERP = [0.15 0.40 0.25];         % interp regions (dark green)
+        DEFAULT_PLOT_REJ = [0.45 0.12 0.12];            % rejection regions (dark red)
+
+        % Comparison overlay colors (for pre/post compare feature)
+        DEFAULT_COMPARE_PRE = [0.30 0.50 0.90];         % pre-data (blue)
+        DEFAULT_COMPARE_POST = [0.90 0.30 0.20];        % post-data (red)
+        DEFAULT_COMPARE_DIFF = [0.20 0.80 0.30];        % difference (green)
+
+        BACKGROUNDCOLOR = [0.15 0.16 0.21];
+
 end

@@ -108,31 +108,7 @@ SAVADATAMARKERS = 1;
 SAVEDATAMARKERTITLE = 'SM';
 
 %% COLOR DEFAULTS
-
-COLOR_MODE = 'Default';
-%     COLOR_MODE = 'DarkMode';
-
-% darkmode = readtext('IsDarkmodeOn.txt');
-% if iscell(darkmode)
-%     darkmode = darkmode{:};
-% end
-% 
-% if darkmode == "YES"
-%     COLOR_MODE = 'DarkMode';
-% end
-
-%COLOR_MODE = 'Default';
-
-c = clock; %loads clock
-% Uncomment these lines to turn on darkmode! open quick_colormode to change
-% colors of all quicklab Ui and plots! WARNING: WILL AFFECT SOME EEGLAB
-% FIGURES AND PLOTS. 
-
-
-% if c(4) >= 16 || c(4) < 5 % If after 6 PM and before 5 AM, changes color scheme to dark mode
-%     COLOR_MODE = 'DarkMode';
-% else
-     COLOR_MODE = 'Default';
-% end
+% Available modes: 'Default', 'DarkMode', 'Modern'
+COLOR_MODE = 'Modern';
 
 quick_colormode; % loads colorscheme from quick_colormode
