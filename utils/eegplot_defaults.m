@@ -173,6 +173,11 @@ static = struct( ...
     'panels',           [] ...
 );
 
+% Ensure g is a struct before merging defaults
+if isempty(g) || ~isstruct(g)
+    g = struct();
+end
+
 % Compare struct (pre/post comparison — see design/TABBED_UI_DESIGN.m)
 if ~isfield(g, 'compare')
     g.compare = struct('storage','none', 'diff_sparse',[], 'tempfile','', ...
