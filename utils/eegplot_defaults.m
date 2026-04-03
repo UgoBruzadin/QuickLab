@@ -99,6 +99,11 @@ function g = eegplot_defaults(g, data, EEG)
 % Author: Ugo Bruzadin Nunes
 % Copyright (C) 2021 Ugo Bruzadin Nunes
 
+% Ensure g is a struct before anything else
+if nargin < 1 || isempty(g) || ~isstruct(g)
+    g = struct();
+end
+
 % Load color defaults
 try
     QuickLabDefs;
@@ -172,11 +177,6 @@ static = struct( ...
     'TBTcom',           '', ...
     'panels',           [] ...
 );
-
-% Ensure g is a struct before merging defaults
-if isempty(g) || ~isstruct(g)
-    g = struct();
-end
 
 % Compare struct (pre/post comparison — see design/TABBED_UI_DESIGN.m)
 if ~isfield(g, 'compare')
