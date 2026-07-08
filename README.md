@@ -1,108 +1,19 @@
-# QuickLab Python
+This is an EEGLAB plugin. 
 
-**Modern EEG visualization and preprocessing for Jupyter notebooks**
+I dreamed of a day when I did not have to interact with prompts while using EEGLAB. As I created newer and newer functions, and modified EEGLAB original scripts, I made this dream come true! This plugin is a love letter to EEGLAB, and what EEGLAB UI could be. 
 
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MNE Compatibility](https://img.shields.io/badge/MNE-1.0%2B-green)](https://mne.tools/)
+The original idea was to run EEGLAB functions quickly, without having to interact with prompts. It turnout to be much more. It contains various EEGLAB functions with prompt removed, but also and importantly, it contains an extremely modified version of EEG scroll plot + and TBT plugins. I recreated an UI were one can perform most EEGLAB functions at an EEG data without leaving the data scroll, and without having to interact with prompts!
 
-QuickLab Python is a modern reimplementation of the popular EEGLAB QuickLab plugin, designed specifically for Jupyter notebook workflows. This is the evolution of the original MATLAB QuickLab - bringing the same powerful manual preprocessing capabilities to Python with seamless MNE-Python integration.
+![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/d4ebb7d5-0764-4577-bf83-bec525d507b7)
 
-> "I dreamed of a day when I did not have to interact with prompts while using EEGLAB..." - *Original QuickLab Vision*  
-> Now that vision comes to Python with modern tools and enhanced capabilities!
 
-## ✨ Key Features
+The Data Scroll Pro is primarily useful for people with small datasets with low channels and low epochs, that need desperate cleaning that could not be done automatically. This allows you to clean each file meticulosuly, removing any and all artifacts.
+It can also help you learn about your dataset, and teach students how to clean and dataset and what a clean and dirty dataset look like.
 
-- **🎯 Interactive EEG Editor**: Color-coded visualization for manual preprocessing  
-- **🧠 MNE-Python Integration**: Full compatibility with MNE data structures and workflows
-- **🤖 Automated Artifact Detection**: Multiple algorithms for identifying bad channels and segments
-- **🔍 Advanced Analysis Tools**: ICA component analysis and visualization capabilities
-- **📊 Multiple Backends**: Support for matplotlib and Plotly visualization
-- **⚡ Jupyter-Optimized**: Built specifically for notebook environments
-- **🔧 Modular Design**: Flexible architecture for custom processing pipelines
+Here's an example:
 
-## 🚀 Quick Start
-
-### Installation
-
-**Development Installation (Current):**
-```bash
-# Clone or navigate to the QuickLab directory
-cd QuickLab
-
-# Install in development mode
-pip install -e .
-
-# Test the installation
-python test_tutorial.py
-```
-
-**Future PyPI Installation:**
-```bash
-pip install quicklab-python[full]
-```
-
-### Basic Usage
-
-```python
-import mne
-from quicklab_python import EEGDataManager, EEGEditorWidget
-
-# Load your EEG data
-raw = mne.io.read_raw_fif('your_eeg_data.fif', preload=True)
-
-# Create the interactive editor widget
-editor = EEGEditorWidget(raw)
-editor.display()
-
-# Or use programmatically
-from quicklab_python.core.data_manager import SelectionType
-dm = EEGDataManager(raw)
-dm.select_channels([0, 5], SelectionType.INTERPOLATE)
-dm.apply_channel_selections()
-```
-
-### Tutorial
-
-Run the interactive tutorial notebook:
-```bash
-jupyter lab quicklab_python/examples/quickstart_tutorial.ipynb
-```
-
-## 🎨 Interactive Features
-
-### Keyboard Shortcuts
-
-- **Arrow keys**: Navigate through time and channels
-- **+/-**: Zoom amplitude scale  
-- **Mouse wheel**: Zoom time axis
-- **r**: Set selection type to "Reject"
-- **i**: Set selection type to "Interpolate"
-- **g**: Set selection type to "Good"
-- **c**: Clear all selections
-
-### Selection Modes
-
-- **Navigate**: Browse and explore your data
-- **Select Channels**: Click to mark channels for processing  
-- **Select Time**: Drag to select time segments
-- **Multiple selection types**: Reject, interpolate, or mark as good
-
-![QuickLab Python Demo](https://via.placeholder.com/800x400/2980B9/FFFFFF?text=QuickLab+Python+Interactive+Editor)
-
-*Modern Python interface bringing the power of the original QuickLab to Jupyter notebooks*
-
-## 📚 Documentation
-
-- **[Installation Guide](docs/installation.rst)** - Detailed setup instructions
-- **[Quick Start Tutorial](docs/quickstart.rst)** - Get started in 5 minutes  
-- **[API Reference](https://quicklab-python.readthedocs.io/)** - Complete documentation
-- **[Example Notebooks](quicklab_python/examples/)** - Interactive tutorials
-
-### Tutorial Notebooks
-
-1. **[Quickstart Tutorial](quicklab_python/examples/quickstart_tutorial.ipynb)** - Basic usage and workflow
-2. **[Advanced Preprocessing](quicklab_python/examples/advanced_preprocessing.ipynb)** - Sophisticated preprocessing strategies
+![image](https://github.com/UgoBruzadin/QuickLab/assets/25592470/3580f188-1f37-42ba-952c-fe187d63b558)
+In this picture you can see the Data Scroll Pro in action. Two epochs (green) contained two channels that needed to be interpolated, but just for that epoch. One epoch (red) needed to be rejected as it contained a blink. I highlighted the functionalities added to the right panel in various colors, and will explain them below in this text.
 
 Here’s a short list of functionalities added compared to Scrollplot and Scrollplot+
 
