@@ -247,7 +247,9 @@ switch fig_opts{1}
 end
 
 if ~isempty(haspar)
-    parfor ri = chanorcomp
+    % Plain for: figures drawn on parallel workers never reach the client, so with a
+    % pool open this loop produced empty plots; without a pool parfor ran serially anyway.
+    for ri = chanorcomp
         %% plot the topoplot headmap
         %QuickLabDefs;
         figure('tag',strcat('fig',int2str(ri),currentfigtag),'Visible','off');

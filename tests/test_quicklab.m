@@ -141,6 +141,29 @@ C = tc.TestData.continuous; C.data(5,:) = 0;
 tc.verifyEqual(find(R.badchans)', 5);
 end
 
+%% BSS (AAR plugin)
+function testParallelBssMatchesAutobss(tc)
+tc.assumeTrue(exist('autobss', 'file') > 0, 'AAR plugin not installed');
+C = tc.TestData.continuous;
+X = double(C.data(:, 1:round(C.srate*21.3)));
+opt = struct; opt.bss_opt = struct('eigratio', 1e6); opt.crit_opt = struct('range', [2 3]);
+opt.crit_opt.eogref = []; opt.crit_opt.fs = C.srate; opt.bss_alg = 'bsscca'; opt.crit_alg = 'eog_fd'; opt.verbose = 0;
+for w = [2 2; 2 1; 3 2]'
+    opt.wl = w(1)*C.srate; opt.ws = w(2)*C.srate;
+    [~, Y] = evalc('par_autobss(X, opt)');
+    [~, Z] = evalc('autobss(X, opt)');
+    tc.verifyEqual(Y, Z, 'AbsTol', 1e-9, sprintf('window %gs, shift %gs', w(1), w(2)));
+end
+end
+
+function testQuickBssKeepsTheData(tc)
+tc.assumeTrue(exist('autobss', 'file') > 0, 'AAR plugin not installed');
+C = tc.TestData.continuous;
+[~, B] = evalc('quick_bss2(C, 2)');
+tc.verifySize(B.data, size(C.data));
+tc.verifyLessThan(mean(B.data(:) == 0), 0.01, 'Quick BSS returned mostly zeros');
+end
+
 %% DIPFIT
 function testParallelDipfitMatchesPopMultifit(tc)
 E = tc.TestData.epochs;

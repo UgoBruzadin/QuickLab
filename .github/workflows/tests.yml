@@ -26,6 +26,12 @@ jobs:
           path: eeglab
           submodules: recursive
 
+      - name: Check out the AAR plugin (BSS artifact removal, used by Quick BSS)
+        uses: actions/checkout@v4
+        with:
+          repository: germangh/eeglab_plugin_aar
+          path: eeglab/plugins/AAR
+
       - uses: matlab-actions/setup-matlab@v2
         with:
           release: ${{ matrix.matlab }}
