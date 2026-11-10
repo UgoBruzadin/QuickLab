@@ -281,7 +281,7 @@ end
 
 if plotdiff == 1
     EEGdiff = EEG.data - EEGmod2.data;
-    eegplot_w2( EEGdiff, 'srate', EEG.srate, 'title', [ 'DIFFERENCE PRE AND POST CHANNEL/COMPONENT INTERPOLATION -- eegplot_w(): ' EEG.setname], ...
+    eegplot( EEGdiff, 'srate', EEG.srate, 'title', [ 'DIFFERENCE PRE AND POST CHANNEL/COMPONENT INTERPOLATION -- eegplot(): ' EEG.setname], ...
         'limits', [EEG.xmin EEG.xmax]*1000 );
 end
 

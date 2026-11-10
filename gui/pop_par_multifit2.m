@@ -181,122 +181,40 @@ function [EEG, com] = pop_par_multifit2(EEG, comps, varargin)
 %     end
     haspar = [];
     haspar = ver('parallel');
-
-    %EEG.dipfit.model(1:length(comps(:)')) = [1];
-    parEEG(1:length(comps(:)')) = deal(EEG); % added by Ugo Bruzadin Nunes to parallelize dipfit
-    
-if ~isempty(haspar)
-    parfor i = comps(:)'
-    %for i = comps(:)'
-        tempEEG = parEEG(i);
-        if i <= length(tempEEG.dipfit.model) && ~isempty(tempEEG.dipfit.model(i).posxyz)
-            if g.dipoles == 2
-                % try to find a good origin for automatic dipole localization
-                tempEEG = EEG;
-                tempEEG.dipfit.model(i).active = [1 2];
-                tempEEG.dipfit.model(i).select = [1 2];
-                if isempty(tempEEG.dipfit.model(i).posxyz)
-                    tempEEG.dipfit.model(i).posxyz = zeros(1,3);
-                    tempEEG.dipfit.model(i).momxyz = zeros(2,3);
-                else
-                    tempEEG.dipfit.model(i).posxyz(2,:) = tempEEG.dipfit.model(i).posxyz;
-                    if strcmpi(tempEEG.dipfit.coordformat, 'MNI')
-                         tempEEG.dipfit.model(i).posxyz(:,1) = [-40;40];
-                    else tempEEG.dipfit.model(i).posxyz(:,2) = [-40;40];
-                    end
-                    tempEEG.dipfit.model(i).momxyz(2,:) = tempEEG.dipfit.model(i).momxyz;
-                end
-            else 
-                tempEEG.dipfit.model(i).active = [1];
-                tempEEG.dipfit.model(i).select = [1];
-            end
-            warning backtrace off;
-            try
-                if g.dipoles == 2
-                    tempEEG = dipfit_nonlinear2(tempEEG, 'component', i, 'symmetry', defaultconstraint);
-                else
-                    tempEEG = dipfit_nonlinear2(tempEEG, 'component', i, 'symmetry', []);
-                end
-            catch, tempEEG.dipfit.model(i).rv = NaN; disp('Maximum number of iterations reached. Fitting failed');
-            end
-            warning backtrace on;
-            plotcomps = [ plotcomps i ];
-            % added by Ugo; distribute the dipfits back to the original EEG
-            try parEEG(i).dipfit.model(i) = tempEEG.dipfit.model(i);
-            catch
-                if isfield(parEEG(i),'dipfit')
-                    if isfield(parEEG(i).dipfit,'model')
-                        parEEG(i).dipfit = rmfield(parEEG(i).dipfit,'model');
-                    end
-                end
-                parEEG(i).dipfit.model(i) = tempEEG.dipfit.model(i);
-            end
-        end
+    % dipfit_nonlinear2 was a modified copy in the author's old DIPFIT install; it is not
+    % shipped with DIPFIT. Without this fallback every fit failed silently (rv = NaN).
+    if exist('dipfit_nonlinear2', 'file')
+        fitdipole = @dipfit_nonlinear2;
+    else
+        fitdipole = @dipfit_nonlinear;
     end
-else
-    for i = comps(:)'
-    %for i = comps(:)'
-        tempEEG = parEEG(i);
-        if i <= length(tempEEG.dipfit.model) && ~isempty(tempEEG.dipfit.model(i).posxyz)
-            if g.dipoles == 2
-                % try to find a good origin for automatic dipole localization
-                tempEEG = EEG;
-                tempEEG.dipfit.model(i).active = [1 2];
-                tempEEG.dipfit.model(i).select = [1 2];
-                if isempty(tempEEG.dipfit.model(i).posxyz)
-                    tempEEG.dipfit.model(i).posxyz = zeros(1,3);
-                    tempEEG.dipfit.model(i).momxyz = zeros(2,3);
-                else
-                    tempEEG.dipfit.model(i).posxyz(2,:) = tempEEG.dipfit.model(i).posxyz;
-                    if strcmpi(tempEEG.dipfit.coordformat, 'MNI')
-                         tempEEG.dipfit.model(i).posxyz(:,1) = [-40;40];
-                    else tempEEG.dipfit.model(i).posxyz(:,2) = [-40;40];
-                    end
-                    tempEEG.dipfit.model(i).momxyz(2,:) = tempEEG.dipfit.model(i).momxyz;
-                end
-            else 
-                tempEEG.dipfit.model(i).active = [1];
-                tempEEG.dipfit.model(i).select = [1];
-            end
-            warning backtrace off;
-            try
-                if g.dipoles == 2
-                    tempEEG = dipfit_nonlinear2(tempEEG, 'component', i, 'symmetry', defaultconstraint);
-                else
-                    tempEEG = dipfit_nonlinear2(tempEEG, 'component', i, 'symmetry', []);
-                end
-            catch, tempEEG.dipfit.model(i).rv = NaN; disp('Maximum number of iterations reached. Fitting failed');
-            end
-            warning backtrace on;
-            plotcomps = [ plotcomps i ];
-            % added by Ugo; distribute the dipfits back to the original EEG
-            try parEEG(i).dipfit.model(i) = tempEEG.dipfit.model(i);
-            catch
-                if isfield(parEEG(i),'dipfit')
-                    if isfield(parEEG(i).dipfit,'model')
-                        parEEG(i).dipfit = rmfield(parEEG(i).dipfit,'model');
-                    end
-                end
-                parEEG(i).dipfit.model(i) = tempEEG.dipfit.model(i);
-            end
+
+    % Fit components in parallel. EEG is sent to each worker once (broadcast) and only
+    % the fitted model comes back. The earlier version made one full copy of EEG per
+    % component and indexed those copies by component number, which failed whenever
+    % comps was not 1:n (e.g. [3 5]).
+    comps = comps(:)';
+    fitted   = cell(1, numel(comps));
+    fittedok = false(1, numel(comps));
+    dipoles  = g.dipoles;
+    if ~isempty(haspar)
+        parfor k = 1:numel(comps)
+            [fitted{k}, fittedok(k)] = fit_one_component(EEG, comps(k), dipoles, defaultconstraint, fitdipole);
+        end
+    else
+        for k = 1:numel(comps)
+            [fitted{k}, fittedok(k)] = fit_one_component(EEG, comps(k), dipoles, defaultconstraint, fitdipole);
         end
     end
 
-end
-    % --- redistribute components back to EEG
-    for s = comps(:)'
-        try EEG.dipfit.model(s) = parEEG(s).dipfit.model(s);
-        catch
-%         if isfield(parEEG(s),'dipfit')
-%             if isfield(parEEG(s).dipfit,'model')
-%                 parEEG(s).dipfit = rmfield(parEEG(s).dipfit,'model');
-%             end
-%         end
-        if s == 1
-            EEG.dipfit.model = parEEG(s).dipfit.model;
+    % --- put the fitted models back (field by field, so models with extra fields merge)
+    for k = find(fittedok)
+        i = comps(k);
+        fn = fieldnames(fitted{k});
+        for f = 1:numel(fn)
+            EEG.dipfit.model(i).(fn{f}) = fitted{k}.(fn{f});
         end
-        EEG.dipfit.model(s) = parEEG(s).dipfit.model(s);
-        end
+        plotcomps = [ plotcomps i ];
     end
     % set RV to 1 for dipole with higher than 40% residual variance
     % -------------------------------------------------------------
@@ -335,10 +253,14 @@ end
     
     % LINE CHANGES BY UGO BRUZADIN NUNES
     % ADDED ATLAS for DIP ID, REMOVE COM FOR PARALLEL PIEPELINES
-    try 
-        EEG = eeg_compatlas3(EEG);
+    try
+        if exist('eeg_compatlas3', 'file')
+            EEG = eeg_compatlas3(EEG); % modified copy from the author's old DIPFIT install
+        else
+            EEG = eeg_compatlas(EEG);  % DIPFIT's atlas labels for each dipole
+        end
     catch
-        fprintf('Could not run eeg_compatlas3 \n') ;
+        fprintf('Could not add atlas labels to the dipoles\n') ;
     end
     com = sprintf('EEG = pop_par_multifit2(EEG, %s);', vararg2str({ comps options{:}}));
     return;
@@ -367,3 +289,39 @@ function elc = getelecpos(chanlocs, dipfitstruct)
 
 
     
+
+function [model, ok] = fit_one_component(EEG, i, dipoles, defaultconstraint, fitdipole)
+% Fit one component, starting from its grid-search position. Mirrors the loop body
+% of EEGLAB's pop_multifit. Returns ok = false for components with no starting position.
+model = [];
+ok = false;
+if i > length(EEG.dipfit.model) || isempty(EEG.dipfit.model(i).posxyz)
+    return;
+end
+if dipoles == 2
+    % try to find a good origin for automatic dipole localization
+    EEG.dipfit.model(i).active = [1 2];
+    EEG.dipfit.model(i).select = [1 2];
+    EEG.dipfit.model(i).posxyz(2,:) = EEG.dipfit.model(i).posxyz;
+    if strcmpi(EEG.dipfit.coordformat, 'MNI')
+        EEG.dipfit.model(i).posxyz(:,1) = [-40;40];
+    else
+        EEG.dipfit.model(i).posxyz(:,2) = [-40;40];
+    end
+    EEG.dipfit.model(i).momxyz(2,:) = EEG.dipfit.model(i).momxyz;
+    symmetry = defaultconstraint;
+else
+    EEG.dipfit.model(i).active = 1;
+    EEG.dipfit.model(i).select = 1;
+    symmetry = [];
+end
+warning backtrace off;
+try
+    EEG = fitdipole(EEG, 'component', i, 'symmetry', symmetry);
+catch
+    EEG.dipfit.model(i).rv = NaN;
+    fprintf('Component %d: dipole fit failed (maximum number of iterations reached)\n', i);
+end
+warning backtrace on;
+model = EEG.dipfit.model(i);
+ok = true;
