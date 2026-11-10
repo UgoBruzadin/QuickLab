@@ -46,11 +46,7 @@ rows = {};
 
 % ---------------- DIPFIT
 if exist('pop_dipfit_settings', 'file')
-    dp = fileparts(which('pop_dipfit_settings'));
-    [~, D] = evalc(['pop_dipfit_settings(E, ''hdmfile'', fullfile(dp,''standard_BESA'',''standard_BESA.mat''), ' ...
-        '''coordformat'', ''Spherical'', ''mrifile'', fullfile(dp,''standard_BESA'',''avg152t1.mat''), ' ...
-        '''chanfile'', fullfile(dp,''standard_BESA'',''standard-10-5-cap385.elp''), ' ...
-        '''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)']);
+    D = setup_dipfit(E);
     comps = 1:size(D.icaweights,1);
     std_fn = @() pop_multifit(D, comps, 'threshold', 100, 'dipplot', 'off');
     par_fn = @() pop_par_multifit2(D, comps, 'threshold', 100, 'dipplot', 'off');
@@ -109,5 +105,19 @@ fprintf(fid, '| Step | Size | Compared with | EEGLAB (s) | QuickLab (s) | Speedu
 for i = 1:height(T)
     fprintf(fid, '| %s | %s | `%s` | %.2f | %.2f | %.1fx | %s |\n', T.Step{i}, T.Size{i}, T.EEGLAB_function{i}, ...
         T.EEGLAB_s(i), T.QuickLab_s(i), T.Speedup(i), mat2str(T.Same_output(i)));
+end
+end
+
+function E = setup_dipfit(E)
+% BESA spherical template, which EEGLAB's sample data are aligned to.
+% DIPFIT 5.x selects templates with 'model'; older versions need the file paths.
+try
+    [~, E] = evalc('pop_dipfit_settings(E, ''model'', ''standardBESA'', ''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)');
+catch
+    dp = fileparts(which('pop_dipfit_settings'));
+    [~, E] = evalc(['pop_dipfit_settings(E, ''hdmfile'', fullfile(dp,''standard_BESA'',''standard_BESA.mat''), ' ...
+        '''coordformat'', ''Spherical'', ''mrifile'', fullfile(dp,''standard_BESA'',''avg152t1.mat''), ' ...
+        '''chanfile'', fullfile(dp,''standard_BESA'',''standard-10-5-cap385.elp''), ' ...
+        '''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)']);
 end
 end

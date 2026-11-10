@@ -167,11 +167,7 @@ end
 %% DIPFIT
 function testParallelDipfitMatchesPopMultifit(tc)
 E = tc.TestData.epochs;
-dp = fileparts(which('pop_dipfit_settings'));
-[~, E] = evalc(['pop_dipfit_settings(E, ''hdmfile'', fullfile(dp,''standard_BESA'',''standard_BESA.mat''), ' ...
-    '''coordformat'', ''Spherical'', ''mrifile'', fullfile(dp,''standard_BESA'',''avg152t1.mat''), ' ...
-    '''chanfile'', fullfile(dp,''standard_BESA'',''standard-10-5-cap385.elp''), ' ...
-    '''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)']);
+E = setup_dipfit(E);
 comps = [3 5]; % not 1:n on purpose
 [~, A] = evalc('pop_multifit(E, comps, ''threshold'', 100, ''dipplot'', ''off'')');
 [~, B] = evalc('pop_par_multifit2(E, comps, ''threshold'', 100, ''dipplot'', ''off'')');
@@ -192,4 +188,18 @@ tc.assertNotEmpty(fig, 'Data Scroll Pro window did not open');
 evalc('eegplot_adv(''drawlegend'', fig(1))');
 tc.verifyNotEmpty(findobj('Tag', 'legend'));
 close all force;
+end
+
+function E = setup_dipfit(E)
+% BESA spherical template, which EEGLAB's sample data are aligned to.
+% DIPFIT 5.x selects templates with 'model'; older versions need the file paths.
+try
+    [~, E] = evalc('pop_dipfit_settings(E, ''model'', ''standardBESA'', ''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)');
+catch
+    dp = fileparts(which('pop_dipfit_settings'));
+    [~, E] = evalc(['pop_dipfit_settings(E, ''hdmfile'', fullfile(dp,''standard_BESA'',''standard_BESA.mat''), ' ...
+        '''coordformat'', ''Spherical'', ''mrifile'', fullfile(dp,''standard_BESA'',''avg152t1.mat''), ' ...
+        '''chanfile'', fullfile(dp,''standard_BESA'',''standard-10-5-cap385.elp''), ' ...
+        '''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)']);
+end
 end
