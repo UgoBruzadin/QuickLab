@@ -827,7 +827,8 @@ if ~ischar(data) % If NOT a 'noui' call or a callback from uicontrols
      %% NEW ADDED FEATURE, COPY THE MENU ITEMS FROM EEGLAB!
      
      eeglab_menus = findobj('tag','EEGLAB');
-     %new_menus = {};
+     if isempty(eeglab_menus), eeglab_menus = struct('Children', []); end % EEGLAB started with 'nogui'
+     new_menus = gobjects(0);
      for i = length(eeglab_menus.Children):-1:1
          if sum(strcmp(eeglab_menus.Children(i).Type,'uimenu'))
              new_menus(i) = copyobj(eeglab_menus.Children(i),findobj('tag','eegplot_adv'),'legacy');

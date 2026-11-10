@@ -1,0 +1,46 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  matlab:
+    name: MATLAB ${{ matrix.matlab }} / EEGLAB ${{ matrix.eeglab }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - matlab: R2024b
+            eeglab: 2025.1.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out EEGLAB ${{ matrix.eeglab }} (with ICLabel, DIPFIT, firfilt)
+        uses: actions/checkout@v4
+        with:
+          repository: sccn/eeglab
+          ref: ${{ matrix.eeglab }}
+          path: eeglab
+          submodules: recursive
+
+      - uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.matlab }}
+          products: >
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Parallel_Computing_Toolbox
+
+      - name: Run tests
+        uses: matlab-actions/run-command@v2
+        env:
+          EEGLAB_DIR: ${{ github.workspace }}/eeglab
+        with:
+          command: |
+            addpath(getenv('EEGLAB_DIR'));
+            results = runtests('tests');
+            disp(table(results));
+            assertSuccess(results);
