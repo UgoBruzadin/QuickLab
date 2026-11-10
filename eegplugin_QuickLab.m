@@ -23,7 +23,7 @@
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 function vers = eegplugin_QuickLab(fig, try_strings, catch_strings)
 
-vers = 0.91;
+vers = 1.0;
 
 % --- Add QuickLab subdirectories to MATLAB path
 pluginDir = fileparts(which('eegplugin_QuickLab'));

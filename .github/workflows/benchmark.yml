@@ -1,0 +1,62 @@
+name: benchmark
+
+on:
+  workflow_dispatch:
+
+jobs:
+  matlab:
+    name: Benchmark on MATLAB ${{ matrix.matlab }} / EEGLAB ${{ matrix.eeglab }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - matlab: R2024b
+            eeglab: 2025.1.0
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out EEGLAB ${{ matrix.eeglab }} (with ICLabel, DIPFIT, firfilt)
+        uses: actions/checkout@v4
+        with:
+          repository: sccn/eeglab
+          ref: ${{ matrix.eeglab }}
+          path: eeglab
+          submodules: recursive
+
+      - name: Check out the AAR plugin (BSS artifact removal, used by Quick BSS)
+        uses: actions/checkout@v4
+        with:
+          repository: germangh/eeglab_plugin_aar
+          path: eeglab/plugins/AAR
+
+      - name: Check out FieldTrip (needed by DIPFIT)
+        uses: actions/checkout@v4
+        with:
+          repository: fieldtrip/fieldtrip
+          ref: '20251218'
+          path: eeglab/plugins/fieldtrip
+
+      - uses: matlab-actions/setup-matlab@v2
+        with:
+          release: ${{ matrix.matlab }}
+          products: >
+            Signal_Processing_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Parallel_Computing_Toolbox
+
+      - name: Run benchmark
+        uses: matlab-actions/run-command@v2
+        env:
+          EEGLAB_DIR: ${{ github.workspace }}/eeglab
+        with:
+          command: |
+            addpath(getenv('EEGLAB_DIR'));
+            addpath(fullfile(getenv('EEGLAB_DIR'), 'plugins', 'fieldtrip')); ft_defaults; evalc('eeglab nogui');
+            addpath(pwd, fullfile(pwd,'gui'), fullfile(pwd,'processing'), fullfile(pwd,'visualization'), fullfile(pwd,'utils'), fullfile(pwd,'benchmarks'));
+            benchmark_quicklab('reps', 3);
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmarks/results.md
