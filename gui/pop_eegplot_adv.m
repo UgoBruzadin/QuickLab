@@ -195,7 +195,8 @@ if reject
 end
 
     eeglab_options; % changed from eeglaboptions 3/30/02 -sm
-    if reject == 0, command = '';
+    if reject == 0
+        command = ''; savecommand = ''; command_pc = ''; savecommand_pc = '';
     else
          command = [com5 com3 com4 ];
          savecommand = [com5 com4];

@@ -12,7 +12,7 @@ ncomp = size(EEG.icawinv, 2);
 assert(isfield(EEG, 'icawinv'), 'You must have an ICA decomposition to use ICLabel')
 
 % assuming chanlocs are correct
-if ~strcmp(EEG.ref, 'averef')
+if ~isequal(EEG.ref, 'average') && ~isequal(EEG.ref, 'averef') % as in ICLabel 1.4+
     [~, EEG] = evalc('pop_reref(EEG, [], ''exclude'', setdiff(1:EEG.nbchan, EEG.icachansind));');
 end
 

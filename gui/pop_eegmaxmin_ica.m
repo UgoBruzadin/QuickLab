@@ -38,9 +38,9 @@ function [EEG, com] = pop_eegmaxmin_ica(EEG,chanRange,timeRange,minmaxThresh,win
 com = '';
 
 if nargin < 1
-   help pop_eegmaxmin;
+   help pop_eegmaxmin_ica;
    return;
-elseif nargin < 6
+elseif nargin < 7
     [~, ~, ~, res] = inputgui(...
         'geometry', {[1] [0.5 0.5] [0.5 0.5] [0.5 0.5] [0.5 0.5] [0.5 0.5] [0.5 0.5]},...
         'geomvert', [1 1 1 1 1 1 1],...
@@ -61,10 +61,13 @@ elseif nargin < 6
         {'Style', 'edit', 'string', '0' 'tag' 'maW' } ...
         } );
     
-    com = ['EEG = pop_eegmaxmin(EEG,[' res.chans '],[' res. times '],[' res.thresh '],[' res.win '],[' res.step '],[' res.maW ']);']; 
-    eval([com]);
+    if isempty(res), return; end % cancelled
+    % run the component version (pop_eegmaxmin from the TBT plugin works on channels)
+    com = ['EEG = pop_eegmaxmin_ica(EEG,[' res.chans '],[' res.times '],[' res.thresh '],[' res.win '],[' res.step '],[' res.maW ']);'];
+    eval(com);
 else
     EEG = eegmaxmin_ica(EEG,chanRange,timeRange,minmaxThresh,winSize,stepSize,maW);
+    com = sprintf('EEG = pop_eegmaxmin_ica(EEG,%s,%s,%s,%s,%s,%s);', mat2str(chanRange), mat2str(timeRange), mat2str(minmaxThresh), mat2str(winSize), mat2str(stepSize), mat2str(maW));
 end
 
 end

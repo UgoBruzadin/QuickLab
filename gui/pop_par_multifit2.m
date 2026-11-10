@@ -338,7 +338,7 @@ end
     try 
         EEG = eeg_compatlas3(EEG);
     catch
-        fprintf('Could not run eeg_compatlas3 \r') ;
+        fprintf('Could not run eeg_compatlas3 \n') ;
     end
     com = sprintf('EEG = pop_par_multifit2(EEG, %s);', vararg2str({ comps options{:}}));
     return;

@@ -30,10 +30,8 @@ else
     EEG.winrej = [];
     winrejPRE = [];
 end
-if isfield(EEG,'badchans')
-    EEG.badchans = zeros(size(EEG.data,1),1);
-else
-    
+if ~isfield(EEG,'badchans') || numel(EEG.badchans) ~= EEG.nbchan
+    EEG.badchans = zeros(EEG.nbchan,1);
 end
 
 if plotchannels ~= 1
@@ -56,7 +54,7 @@ switch method
     case 7
         %options;
         EEG = detect_flatline(EEG);
-        %update_trial_rejections(EEG);
+        return; % flat channels are marked in EEG.badchans; no trial rejection to merge
         %return;
     case 1
         comrej  = ['EEG = pop_eegthresh(EEG, ' icacomp ',' chancomps ',' options ', 1, 0);'];
@@ -144,119 +142,22 @@ if ~isempty(winrej)
     % --- Updating and organizing winrej
     EEG.winrej = unique(EEG.winrej,'rows');
     EEG.winrej = sortrows(EEG.winrej,'ascend');
-    EEG.winrej = merge_trials(EEG.winrej);
+    EEG.winrej = eegplot_adv_methods('merge_trials', EEG.winrej);
     % --- storing new winrej
     %EEG.winrejNEW = EEG.winrej;
 
 end
 
+
 function EEG = detect_flatline(EEG,max_flatline_duration,max_allowed_jitter)
-   % modified from cleanline plugin
-   % Copyright (C) Christian Kothe, SCCN, 2012, ckothe@ucsd.edu
-
+   % modified from the clean_rawdata plugin (Christian Kothe, SCCN, 2012)
    if nargin < 2
-       max_flatline_duration = 5;
-       max_allowed_jitter = 0.1;
+       max_flatline_duration = 5;   % seconds
+       max_allowed_jitter = 0.1;    % microvolts
    end
-
    for c = 1:EEG.nbchan
        zero_intervals = reshape(find(diff([false abs(diff(EEG.data(c,:)))<(max_allowed_jitter) false])),2,[])';
-       if max(zero_intervals(:,2) - zero_intervals(:,1)) > max_flatline_duration*EEG.srate
-           EEG.badchans = 1;
+       if ~isempty(zero_intervals) && max(zero_intervals(:,2) - zero_intervals(:,1)) > max_flatline_duration*EEG.srate
+           EEG.badchans(c) = 1; % was EEG.badchans = 1, which overwrote the whole vector
        end
    end
-
-function update_trial_rejections(g)
-%% this function updates the tags for trial rejection and partial interpolations
-%g = get(gcf,'UserData');
-
-% calculate total numbers of rejections and interpolations
-g.winrej = sortrows(g.winrej,'ascend');
-
-reds = num2str(0);
-greens = num2str(0);
-bad_chans = num2str(0);
-partial_interps = num2str(0);
-
-% removes all repetitive marks
-g.winrej = unique(g.winrej,'rows');
-
-if ~isempty(g.winrej)
-    % calculate reds and greens using RGB 'R' (3) and 'G' (4)
-    reds = num2str(sum(g.winrej(:,3) == 1));
-    greens = num2str(sum(g.winrej(:,4) == 1));
-
-    % gets total sum of bad channels and partial interpolations
-    if ~isfield(g.eloc_file, 'badchan')
-        for ii=1:length(g.eloc_file)
-            g.eloc_file(ii).badchan = 0;
-        end
-    end
-    try bad_chans = num2str(sum([g.eloc_file.badchan])); catch; end
-    partial_interps = num2str(sum(sum(g.winrej(find(g.winrej(:,4) == 1),6:end),2))); %finds greends, get columns sum, get total sum
-end
-% creates strings for printing
-total_chanmarks = strcat('Marked Channels: ',{' '},bad_chans,' (', partial_interps, ' P','arts)');
-total_marks = strcat('Marked Trials: ',{' '},reds,' Red,',{' '}, greens, ' G','reen');
-
-% prints on menu using these tags
-set(findobj(gcf, 'Tag', 'Count_Channels'),'string',total_chanmarks);%
-set(findobj(gcf, 'Tag', 'Count_Trials'),'string',total_marks);%
-
-draw_data([],[],gcf,0,[],g);
-draw_matrix(g);
-
-function winrej_merged = merge_trials(winrej)
-%% merges repetitive regions rejection
-
-% get bollean list of repetitive
-% merge
-% make it red if X, green if > 1, delete if empty;
-winrej_merged = [];
-og_winrej = winrej;
-counter = 0;
-
-winrej = sortrows(winrej,'ascend');
-
-for i = 1:size(winrej,1)
-    if size(winrej,1) < i-counter
-        break;
-    else
-        %try
-        copies = winrej( winrej(:,1) == winrej(i-counter,1) & winrej(:,2) == winrej(i-counter,2),: );
-        %catch
-        %    break;
-        %end
-        if size(copies,1) > 1
-            %fullcopies = rejlist(rejlist(:,1) == copies(1),:);
-
-            new_rej_row      = zeros(1,size(winrej,2));
-            new_rej_row(1,1:2) = copies(1,1:2);
-            new_rej_row(1,3:5) = copies(1,3:5);                              % R for bad chans
-
-            %for j = 1:size(copies,1)-1
-
-            %templist(1,6:end) = copies(j,6:end) | copies(j+1,6:end);
-
-            % --- collects aany flagged channels in this trial
-            new_rej_row(6:end) = any(copies(:,6:end));
-
-            % --- gets any of the copies that is red, if any
-            anyreds = copies(copies(1:size(copies,1),3) == 1,3:5);
-
-            % --- if any of the flagged channels are red, paint new flag red
-            if size(anyreds,1) > 0
-                new_rej_row(3:5) = anyreds(1,:);
-            end
-            %end
-            %--- merges the new line in the new flags
-            winrej_merged = [winrej_merged;new_rej_row];
-
-            % --- adds number of flagged copies to counter
-            counter = counter + size(copies,1)-1;
-            winrej(winrej(:,1) == copies(1),:) = [];
-        else
-            winrej_merged = [winrej_merged;copies];
-        end
-    end
-end

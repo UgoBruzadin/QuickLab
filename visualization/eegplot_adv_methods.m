@@ -677,59 +677,27 @@ eegplot_adv('draw_matrix');
 
 
 function winrej_merged = merge_trials(winrej)
-    %% merges repetitive regions rejection
-
-    % get bollean list of repetitive
-    % merge
-    % make it red if X, green if > 1, delete if empty;
-    winrej_merged = [];
-    og_winrej = winrej;
-    counter = 0;
-
-    winrej = sortrows(winrej,'ascend');
-
-    for i = 1:size(winrej,1)
-        if size(winrej,1) < i-counter
-            break;
-        else
-        %try
-            copies = winrej( winrej(:,1) == winrej(i-counter,1) & winrej(:,2) == winrej(i-counter,2),: );
-        %catch
-        %    break;
-        %end
-        if size(copies,1) > 1
-            %fullcopies = rejlist(rejlist(:,1) == copies(1),:);
-
-            new_rej_row      = zeros(1,size(winrej,2));
-            new_rej_row(1,1:2) = copies(1,1:2);
-            new_rej_row(1,3:5) = copies(1,3:5);                              % R for bad chans
-
-            %for j = 1:size(copies,1)-1
-
-            %templist(1,6:end) = copies(j,6:end) | copies(j+1,6:end);
-
-            % --- collects aany flagged channels in this trial
-            new_rej_row(6:end) = any(copies(:,6:end));
-
-            % --- gets any of the copies that is red, if any
-            anyreds = copies(copies(1:size(copies,1),3) == 1,3:5);
-
-            % --- if any of the flagged channels are red, paint new flag red
-            if size(anyreds,1) > 0
-                new_rej_row(3:5) = anyreds(1,:);
-            end
-            %end
-            %--- merges the new line in the new flags
-            winrej_merged = [winrej_merged;new_rej_row];
-
-            % --- adds number of flagged copies to counter
-            counter = counter + size(copies,1)-1;
-            winrej(winrej(:,1) == copies(1),:) = [];
-        else
-            winrej_merged = [winrej_merged;copies];
-        end
-        end
+    % Rewritten 2026: the old loop crashed when 3+ rows shared a window and could
+    % emit duplicate rows. Merge rejection rows that cover the same window (same start and end sample):
+    % channel flags are OR-ed, and the row is red (reject) if any copy was red.
+    if isempty(winrej)
+        winrej_merged = winrej;
+        return;
     end
+    [~, ~, grp] = unique(winrej(:,1:2), 'rows');
+    nWin = max(grp);
+    winrej_merged = zeros(nWin, size(winrej,2));
+    for k = 1:nWin
+        rows = winrej(grp == k, :);
+        merged = rows(1,:);
+        merged(6:end) = any(rows(:,6:end), 1);
+        reds = rows(rows(:,3) == 1, 3:5);
+        if ~isempty(reds)
+            merged(3:5) = reds(1,:);
+        end
+        winrej_merged(k,:) = merged;
+    end
+    winrej_merged = sortrows(winrej_merged);
 
 
 function g = detect_flatline(g,max_flatline_duration,max_allowed_jitter)

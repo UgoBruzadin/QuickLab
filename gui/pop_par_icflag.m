@@ -23,6 +23,7 @@
 % Author: Arnaud Delorme
 
 function [EEG,com] = pop_par_icflag(EEG, thresh)
+com = '';
 
 if nargin < 1
     help pop_icflag
@@ -79,11 +80,13 @@ else
     nComps = size(EEG.etc.ic_classification.ICLabel.classifications, 1);
     flagReject = false(nComps, 1);
     for iCat = 1:7
-        tmpReject  = EEG.etc.ic_classification.ICLabel.classifications(:,iCat) > thresh(iCat,1) & EEG.etc.ic_classification.ICLabel.classifications(:,iCat) < thresh(iCat,2);
+        % inclusive bounds, as in EEGLAB's pop_icflag (NaN rows never match)
+        tmpReject  = EEG.etc.ic_classification.ICLabel.classifications(:,iCat) >= thresh(iCat,1) & EEG.etc.ic_classification.ICLabel.classifications(:,iCat) <= thresh(iCat,2);
         flagReject = flagReject | tmpReject;
     end
     EEG.reject.gcompreject = flagReject';
     fprintf('%d components flagged for rejection, to reject them use Tools > Remove components from data\n', sum(flagReject));
+    com = sprintf('EEG = pop_par_icflag(EEG, %s);', mat2str(thresh));
     %com = sprintf('EEG = pop_icflag(EEG, %s);',vararg2str(thresh));
 end
 

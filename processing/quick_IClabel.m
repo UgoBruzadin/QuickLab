@@ -18,6 +18,7 @@ function [EEG,com] = quick_IClabel(EEG,minfreq,maxfreq,type,df,newcommand,fig_op
 % along with this program; if not, write to the Free Software
 
 QuickLabDefs;
+com = '';
 
 if nargin < 8
     display = 1;
@@ -48,11 +49,11 @@ if isempty(EEG.data)
     EEG = eegh(com, EEG);
 end
 if isempty(EEG.icawinv)
-    fprintf('Error: must first run an ICA or PCA \r');
+    fprintf('Error: must first run an ICA or PCA \n');
     return;
 end
 if isempty(EEG.icaact)
-    EEG.icaact = (EEG.icaweights*EEG.icasphere)*EEG.data(EEG.icachansind,:);
+    EEG.icaact = eeg_getica(EEG); % keeps the epoch dimension for epoched data
 end
 
 [EEG,com] = pop_par_iclabel(EEG,type);

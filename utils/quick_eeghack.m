@@ -55,7 +55,7 @@ set(h, 'backgroundcolor', [0.9 0.9 0.9]);
 h = findobj(gcf, 'tag', 'SAVETITLE2');
 set(h, 'backgroundcolor', [.66 .76 1]);
 
-fprintf('QUICKLAB: EEGLAB main menu was successfully modified! \r')
+fprintf('QUICKLAB: EEGLAB main menu was successfully modified! \n')
 
 function tmprank2 = getrank(tmpdata)
         

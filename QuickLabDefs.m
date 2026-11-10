@@ -64,14 +64,20 @@ KEEPREF = 'on';
 CORRMAPDEFS = [''];
 
 %% Defaults for PCA/ICA & ICLABEL
-ICATYPE = 'cudaica';
+% 'cudaica' is much faster but needs an NVIDIA GPU and the CUDAICA plugin;
+% 'runica' works everywhere. Use cudaica when it is installed.
+if exist('cudaica', 'file')
+    ICATYPE = 'cudaica';
+else
+    ICATYPE = 'runica';
+end
 EXTENDED = 1;
 VERBOSE = 'off';
-PCADEFS = ['icatype',ICATYPE,'extended',EXTENDED,'verbose',VERBOSE];
+PCADEFS = {'icatype',ICATYPE,'extended',EXTENDED,'verbose',VERBOSE};
 
 % ICLABEL type, Highest Frequency, Lowest Frquency
 
-ICLABELDEFS = ['default',60,0];
+ICLABELDEFS = {'default',60,0};
 
 %% Number of dipoles to plot in DIPFIT (1 or 2)
 DIPFITDEFS = [1];
@@ -123,7 +129,6 @@ COLOR_MODE = 'Default';
 
 %COLOR_MODE = 'Default';
 
-c = clock; %loads clock
 % Uncomment these lines to turn on darkmode! open quick_colormode to change
 % colors of all quicklab Ui and plots! WARNING: WILL AFFECT SOME EEGLAB
 % FIGURES AND PLOTS. 

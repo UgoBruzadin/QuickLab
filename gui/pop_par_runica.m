@@ -244,7 +244,7 @@ end
 
 % decode input arguments
 % ----------------------
-[ g, addoptions ] = finputcheck( options, { 'icatype'        'string'  allalgs   'binica'; ...
+[ g, addoptions ] = finputcheck( options, { 'icatype'        'string'  allalgs   'runica'; ...
                             'dataset'        'integer' []        [1:length(ALLEEG)];
                             'options'        'cell'    []        {};
                             'concatenate'    'string'  { 'on','off' }   'off';
@@ -455,10 +455,10 @@ switch lower(g.icatype)
         end
         tmprank = getrankMin(tmpdata(:,1:min(3000, size(tmpdata,2))));
         if tmprank == size(tmpdata,1) || pca_opt
-            [EEG.icaweights,EEG.icasphere] = binica(EEG,tmpdata, 'lrate', 0.001, g.options{:} ); % Added EEG by Ugo Nunes 06/21/2020
+            [EEG.icaweights,EEG.icasphere] = call_binica(EEG, tmpdata, 'lrate', 0.001, g.options{:} ); % Added EEG by Ugo Nunes 06/21/2020
         else 
             disp(['Data rank (' int2str(tmprank) ') is smaller than the number of channels (' int2str(size(tmpdata,1)) ').']);
-            [EEG.icaweights,EEG.icasphere] = binica(EEG,tmpdata, 'lrate', 0.001, 'pca', tmprank, g.options{:}); % Added EEG by Ugo Nunes 06/21/2020
+            [EEG.icaweights,EEG.icasphere] = call_binica(EEG, tmpdata, 'lrate', 0.001, 'pca', tmprank, g.options{:}); % Added EEG by Ugo Nunes 06/21/2020
         end
         toc
         if isfield(EEG,'dipfit')
@@ -600,12 +600,11 @@ else
     ALLEEG = eeg_store(ALLEEG, EEG, g.dataset);
 end
 
-if nargin < 2 || selectamica
-    if ~isempty(g.options)
-        com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'', %s);', g.icatype, vararg2str(g.options) ); %vararg2str({ 'icatype' g.icatype 'dataset' g.dataset 'options' g.options }) );
-    else
-        com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'');',g.icatype );
-    end
+% always record the command so EEGLAB history works for scripted calls too
+if ~isempty(g.options)
+    com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'', %s);', g.icatype, vararg2str(g.options) );
+else
+    com = sprintf('EEG = pop_par_runica(EEG, ''icatype'', ''%s'');',g.icatype );
 end
 
 return;
@@ -640,3 +639,12 @@ function tmprank2 = getrankMin(tmpdata)
         tmprank2 = min(tmprank, tmprank2);
     end
             
+
+function [wts, sph] = call_binica(EEG, data, varargin)
+% Stock EEGLAB's binica takes (data, ...). The 2021 modified copy in the author's EEGLAB
+% fork takes (EEG, data, ...) (it named temp files after the dataset). Support both.
+if nargin('binica') > 25
+    [wts, sph] = binica(EEG, data, varargin{:});
+else
+    [wts, sph] = binica(data, varargin{:});
+end

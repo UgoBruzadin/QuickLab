@@ -1,5 +1,4 @@
 function [EEG, varargout] = pop_par_iclabel(EEG, icversion)
-icversion = 'default';
 %POP_ICLABEL Function for EEG IC labeling
 %   Label independent components using ICLabel. Go to
 %   https://sccn.ucsd.edu/wiki/ICLabel for a tutorial on this plug-in. Go
@@ -31,7 +30,16 @@ icversion = 'default';
 %       EEG.etc.ic_classifications.ICLabel.classifications(7, 3)
 %   since EEG.etc.ic_classifications.ICLabel.classes{3} is "eye"
 
-if ~exist('icversion', 'var')
+% QuickLab runs without prompts: no version given means the default network.
+if nargin < 2 || isempty(icversion)
+    icversion = 'default';
+end
+icversion = lower(icversion);
+if ~any(strcmp(icversion, {'default','lite','beta'}))
+    error('pop_par_iclabel: version must be ''default'', ''lite'' or ''beta''.');
+end
+
+if false % version prompt kept from pop_iclabel, unused
     try
         [~, icversion] = evalc(['inputdlg3(' ...
             '''prompt'', {''Select which icversion of ICLabel to use:'', ''Default (recommended)|Lite|Beta''},' ... 
@@ -109,7 +117,7 @@ if length(EEG) > 1
 else
     EEG = iclabel_par(EEG, icversion);
 end
-varargout = {['EEG = pop_iclabel_par(EEG, ''' icversion ''');']};
+varargout = {['EEG = pop_par_iclabel(EEG, ''' icversion ''');']};
 
 % % visualize with viewprops
 % try

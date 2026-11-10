@@ -10,6 +10,10 @@ function EEG = eegmaxmin_ica(EEG,compRange,timeRange,minmaxThresh,winSize,stepSi
 %   stepSize       - Step size of sliding window in ms (default: winSize/10)
 %   maW            - Moving average window in ms (optional, applied along time)
 
+if isempty(EEG.icaact)
+    EEG.icaact = eeg_getica(EEG);
+end
+
 % Set defaults if inputs are empty
 if isempty(compRange), compRange   = 1:size(EEG.icaact,1);             end
 if isempty(timeRange), timeRange   = [EEG.xmin EEG.xmax]*1000;         end % in ms
