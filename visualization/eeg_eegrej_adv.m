@@ -108,7 +108,7 @@ else
 end
 
 %% --- STORE CURRENT MARKS TO FILE
-if SAVEBACKUP
+if SAVEBACKUP && ~isempty(EEG.filename) % unsaved datasets have nowhere to put a backup
     [~, fname, ~] = fileparts(EEG.filename);
     [EEG] = pop_saveset(EEG, 'filename', [fname 's.set'], 'filepath', EEG.filepath);
 end
@@ -209,7 +209,6 @@ if ~isempty(list_of_chans_or_comps)
             for i=1:size(regions_for_interp,1)
                 fprintf(strcat('Interpolating components(s) ', num2str(compOrChan),' for the period...',num2str(regions_for_interp(i,1)),' to...',num2str(regions_for_interp(i,2))), '\r' );
                 EEGmod.data(:,regions_for_interp(i,1):regions_for_interp(i,2)) = EEGinterp.data(:,regions_for_interp(i,1):regions_for_interp(i,2));
-                EEGmod.icaact = EEGinterp.icaact;
             end
             EEGmod.suffix = strcat(EEGmod.suffix,strcat('pPI',suf));
             EEGcumulative = EEGmod;
@@ -240,7 +239,6 @@ if ~isempty(list_of_chans_or_comps)
                 fprintf(strcat('Interpolating components(s)...', num2str(compOrChan),' for the period...',num2str(regions_for_interp(j,1)),' to...',num2str(regions_for_interp(j,2))), '\r' );
                 EEGinterp = pop_subcomp(EEGcumulative,[compOrChan]);
                 EEGmod.data(:,regions_for_interp(j,1):regions_for_interp(j,2)) = EEGinterp.data(:,regions_for_interp(j,1):regions_for_interp(j,2));
-                EEGmod.icaact = EEGinterp.icaact;
             end
 
             EEGcumulative = EEGmod;
@@ -254,6 +252,11 @@ if ~isempty(list_of_chans_or_comps)
 end % end partial interpolations
 
 %% Full channel interpolations or component removal
+if chanorcomp ~= 1 && ~isempty(list_of_chans_or_comps)
+    % pop_subcomp drops components, so its activations no longer match this dataset's
+    % ICA weights; recompute them from the partially cleaned data instead
+    EEGcumulative.icaact = eeg_getica(EEGcumulative);
+end
 EEGmod2 = EEGcumulative;
 
 if ~isempty(chansorcomps4removal)
