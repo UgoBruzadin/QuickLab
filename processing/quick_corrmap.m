@@ -1,16 +1,10 @@
 function EEG = quick_corrmap(EEG,threshold,numOfRejectionsPerTemplate,corrpath)
 % --- defining defaults
 currentFolder = pwd;
-if nargin < 4
-    if isfile('corrmappath.txt')
-        corrmappath = readtext('corrmappath.txt');
-        if iscell(corrmappath)
-            corrmappath = corrmappath{:};
-        end
-    else
-        corrmappath = uigetdir();
-        writematrix(corrmappath,'corrmappath.txt')
-    end
+restoreFolder = onCleanup(@() cd(currentFolder)); % return to the user's folder even on error
+if nargin < 4 || isempty(corrpath)
+    corrpath = save_corrmappath(false); % saved templates folder, asks only the first time
+    if isempty(corrpath), return; end
 end
 
 if nargin < 3
@@ -24,11 +18,11 @@ end
 
 %allsets = dir('*.set'); %contains all sets from the folder
 % --- moves to corrmap folder and gets all corrmap file directory
-corrpath = strcat(corrpath,'/',num2str(EEG.nbchan));
+corrpath = fullfile(corrpath, num2str(EEG.nbchan)); % templates are kept per channel count
 if isfolder(corrpath)
     cd(corrpath);
 else
-    fprintf('No CORRMAP folder, make a folder and add maps in! \r')
+    fprintf('quick_corrmap: no templates for %d channels. Expected .set files in %s\n', EEG.nbchan, corrpath);
     return
 end
 

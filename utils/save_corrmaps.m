@@ -5,32 +5,26 @@ if isempty(EEG.data)
     eeglab redraw
 end
 
-if isempty(EEG.icaact)
-    fprintf('No ICA, run ICA /r');
+if isempty(EEG.icaweights)
+    fprintf('save_corrmaps: no ICA decomposition, run ICA first.\n');
     return
 end
 
 currentfolder = pwd;
+restoreFolder = onCleanup(@() cd(currentfolder)); % return to the user's folder even on error
 
-if isfile('corrmappath.txt')
-    corrmappath = readtext('corrmappath.txt');
-    if iscell(corrmappath)
-        corrmappath = corrmappath{:};
-    end
-end
-myComps = find(EEG.reject.gcompreject);
+myComps = [];
+if isfield(EEG.reject, 'gcompreject'), myComps = find(EEG.reject.gcompreject); end
 
-if ~myComps
-    fprintf('No component selected, select components first /r');
-    EEG = quick_IClabel(EEG);
+if isempty(myComps)
+    fprintf('save_corrmaps: no component selected. Mark components first, then save them as templates.\n');
+    quick_IClabel(EEG);
     return
 end
-try 
-    path = corrmappath;
-    cd(path)
-catch corrmappath = save_corrmappath()
-    path = corrmappath;
-end
+
+corrmappath = save_corrmappath(false); % saved templates folder, asks only the first time
+if isempty(corrmappath), return; end
+cd(corrmappath);
 
 
 chanfolder = num2str(EEG.nbchan);
@@ -63,11 +57,7 @@ if myComps
         corrName = EEGbase.etc.ic_classification.ICLabel.classes(col);
         corrName = corrName{:}; % --- removes it from a cell into a str/char
         % --- get number of components in the list; start fresh if list of components is empty
-        if isempty(corrmapFiles)
-            compNumber = 1;
-        else
-            compNumber = size(corrmapFiles,1) + i;
-        end
+        compNumber = numel(corrmapFiles) + i; % was 1 for every component when the folder started empty
         % --- finalize component name with %, number and ID
         corrName = strcat(corrName,'-',num2str(compNumber),'-',num2str(value));
         % --- save component

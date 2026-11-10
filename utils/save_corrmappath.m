@@ -1,34 +1,40 @@
-%--- this function was written by Ugo Bruzadin Nunes
-%--- in June 23th 2021
-%--- 
+function corrmappath = save_corrmappath(ask)
+% save_corrmappath() - Get or set the folder that holds QuickLab's CorrMap templates.
+%
+% Usage:
+%   >> corrmappath = save_corrmappath();       % ask for a folder and remember it
+%   >> corrmappath = save_corrmappath(false);  % reuse the saved folder; ask only if none
+%
+% The folder is stored as a MATLAB preference (getpref('QuickLab','corrmapPath')), so it
+% survives restarts and does not depend on the current folder. A corrmappath.txt left
+% in the plugin folder by older QuickLab versions is picked up once and migrated.
+%
+% Author: Ugo Bruzadin Nunes, June 2021
 
-function corrmappath = save_corrmappath()
-
-%--- save current path
-currentfolder = pwd;
-%--- changes to plugin folder
-folder = geteeglabpath();
-if isempty(folder)
-    return;
+if nargin < 1
+    ask = true;
 end
-cd(strcat(folder,'/plugins'));
-quicklab = dir('QuickLab*');
-cd(quicklab.name)
-%cd('C:/GitHub/eeglab/plugins/QuickLab'); %NEEDS FIXING
-pluginfolder = pwd;
-%--- creates empty string variable corrmappath
+
 corrmappath = '';
-%--- checks to see if corrmap exists
-if isfile('corrmappath.txt')
-    corrmappath = readtext('corrmappath.txt');
-    if iscell(corrmappath)
-        corrmappath = corrmappath{:};
-    end
+if ispref('QuickLab', 'corrmapPath')
+    corrmappath = getpref('QuickLab', 'corrmapPath');
 else
-    corrmappath = uigetdir(corrmappath);
-    writematrix(corrmappath,'corrmappath.txt');
+    legacy = fullfile(fileparts(which('eegplugin_QuickLab')), 'corrmappath.txt');
+    if isfile(legacy)
+        corrmappath = strtrim(fileread(legacy));
+        corrmappath = strrep(corrmappath, ',', ''); % writematrix stored chars comma-separated
+    end
 end
 
-cd(pluginfolder);
+if ask || isempty(corrmappath) || ~isfolder(corrmappath)
+    picked = uigetdir(corrmappath, 'Folder for QuickLab CorrMap templates');
+    if isequal(picked, 0) % cancelled: keep whatever was saved before
+        if ~isfolder(corrmappath), corrmappath = ''; end
+        return;
+    end
+    corrmappath = picked;
+end
 
+setpref('QuickLab', 'corrmapPath', corrmappath);
+fprintf('QuickLab: CorrMap templates folder is %s\n', corrmappath);
 end
