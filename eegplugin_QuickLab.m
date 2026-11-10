@@ -75,11 +75,8 @@ uimenu( othermenu, 'label', 'Quick Plot Channel Spectra default', 'callback', ..
 uimenu( othermenu, 'label', 'Quick Plot Channel Spectra - LE ref', 'callback', ...
     ['[~, LASTCOM] = quick_spectra(EEG,40,2,''LE'');[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
 
-uimenu( othermenu, 'label', 'Quick ERP Viewprops+ plot', 'callback', ...
-    ['LASTCOM = pop_viewprops_erp(EEG,0,1:size(EEG.icawinv,2),{''freqrange'',[2 55]});[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
-
 uimenu( othermenu, 'label', 'Quick IClabel, DIPFIT & Viewprops+ plot', 'callback', ...
-    ['[EEG,com] = quick_IClabel(EEG,2,55,''default'',1)',...
+    ['[EEG,com] = quick_IClabel(EEG,2,55,''default'',1);',...
     '[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
 
 uimenu( othermenu, 'label', 'Quick Plot Channel Spectra 2 to 22hz', 'callback', ...
@@ -88,16 +85,7 @@ uimenu( othermenu, 'label', 'Quick Plot Channel Spectra 2 to 22hz', 'callback', 
 uimenu( othermenu, 'label', 'Quick Plot Channel Spectra 18 to 55hz', 'callback', ...
     ['[EEG, LASTCOM] = quick_spectra(EEG,55,18);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
 
-uimenu( othermenu, 'label', 'Plot Last Files Data Differences', 'callback', ...
-    ['plotDifference(ALLEEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
     
-printmenu = uimenu (plotmenu, 'label', 'Quick Print'); 
-
-uimenu( printmenu, 'label', 'Print Components', 'callback', ...
-    ['print_ICA(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
-
-uimenu( printmenu, 'label', 'Print FFT', 'callback', ...
-    ['print_FFT(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);']);
 
 % plot fft difference!
 
@@ -110,7 +98,7 @@ uimenu( dipfitmenu, 'label', 'Quick ICA & DipFit', 'callback', ...
     ['[EEG,LASTCOM] = quick_PCA(EEG);EEG = quick_dipfit(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
 
 uimenu( dipfitmenu, 'label', 'Quick N-1 PCA & DipFit', 'callback', ...
-    ['[EEG,LASTCOM] = quick_PCA(EEG, strcat(size(EEG.icaact,1)-1));EEG = quick_dipfit(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
+    ['[EEG,LASTCOM] = quick_PCA(EEG,''N-1'');EEG = quick_dipfit(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
 
 for d=6:2:50
 uimenu( dipfitmenu, 'label', strcat('PCA ',num2str(d),' & DipFit'), 'callback', ...
@@ -124,7 +112,7 @@ uimenu( pcamenu, 'label', 'ICA', 'callback', ...
     ['[EEG,LASTCOM] = quick_PCA(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
 
 uimenu( pcamenu, 'label', 'N-1 PCA', 'callback', ...
-    ['[EEG,LASTCOM] = quick_PCA(EEG,strcat(size(EEG.icaact,1)-1));[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
+    ['[EEG,LASTCOM] = quick_PCA(EEG,''N-1'');[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
 
 for i=4:35
 uimenu( pcamenu, 'label', strcat('PCA ',num2str(i)), 'callback', ...
@@ -152,9 +140,6 @@ uimenu (bssmenu, 'label', 'Quick BSS 2 epochs', 'callback', ...
 uimenu (bssmenu, 'label', 'Quick BSS full file', 'callback', ...
     ['[EEG,LASTCOM] = quick_bss2(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
 
-uimenu (bssmenu, 'label', 'Exp PAR BSS full file', 'callback', ...
-    ['[EEG,LASTCOM] = quick_par_bss2(EEG);[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
-
 % --- third submenu: Quick channel edits
 channelmenu = uimenu (supermenu, 'label', 'Quick Channel Edit');
 
@@ -171,7 +156,7 @@ filtermenu = uimenu (channelmenu, 'label', 'Quick Filter');
 
  for a=0.5:0.5:22
  uimenu( filtermenu, 'label', strcat('Quick High Pass ',num2str(a)), 'callback', ...
-     ['EEG = quick_lowpass(EEG,' num2str(a) ');[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
+     ['EEG = quick_highpass(EEG,' num2str(a) ');[ALLEEG EEG CURRENTSET] = eeg_store(ALLEEG, EEG, CURRENTSET);eeglab redraw;']);
  end
 
 for b=14:40
