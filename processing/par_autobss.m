@@ -103,172 +103,113 @@ end
 % -----------------------------------------
 ovlength = wl-ws;
 
-init = 1:ws:L;
+% Window bounds, computed exactly as in AAR's autobss
+init  = 1:ws:L;
 final = init+wl-1;
-samples = length(init);
+nwin  = length(init);
+for i = 1:nwin
+    if final(i) > L
+        if (final(i)-L) > .5*wl
+            nwin = i-1; % last window too short: left unprocessed
+            break;
+        else
+            final(i) = L;
+            if i < nwin
+                final(i+1) = Inf;
+            end
+        end
+    end
+end
+init = init(1:nwin); final = final(1:nwin);
 
-% initialize the output (corrected)data
-% ----------------------------------------
-dataOut = zeros(d,L);
-
-% reference EOG channels data
-% ----------------------------------------
 if isfield(opt.crit_opt,'eogref')
     eogref = opt.crit_opt.eogref;
 else
     eogref = [];
 end
-finals = cell(1, samples); % Pre-allocate cell array for performance
-[finals{:}] = deal(final); % Distribute 'final' to all elements of 'finals'
-%finals{samples} = deal(final);
 
-% repositioning of OG code; remove excess samples
-for i = 1:samples
-    final1 = finals(i);
-    final1 = final1{:};
-    if final1(i)>L
-        if (final1(i)-L)>.5*wl
-            samples=i-1;
-            %warning('Last analysis window is too short and therefore will not be processed');
-            break; 
-        else
-            final1(i)=L;
-            if i < samples
-                final1(i+1) = Inf;
-            end
-        end
-    end
-    finals{i} = final1;
-end
-
-
-% assigning all variables before loop starts
-
-X{samples} = deal(dataIn);
-Xi{samples} = deal([]);
-Yis{samples} = deal([]);
-Ais{samples} = deal([]);
-Wis{samples} = deal([]);
-finals{samples} = deal(final);
-dataOuts{samples} = deal(dataOut);
-index{samples} = deal([]);
-opts{samples} = deal(opt);
-Ximeans{samples} = deal([]);
-thisYs{samples} = deal([]);
-thisXs{samples} = deal([]);
-EOGs{samples} = deal([]);
-
-
-if opt.verbose,fprintf('\nRunning BSS filter in sliding windows in PAR');end
-
-%% TEST IF HAS PAR
-% RUN IF STATEMENT if par etc.
-parfor i = 1:samples
-
-    X = dataIn;
-    final = finals{i};
-    dataOuti = dataOut;
-
-
-    Xi{i} = X(:,init(i):final(i));
-    % remove data mean
-    Ximean = mean(Xi{i},2);
-    Xi{i} = Xi{i}-repmat(Ximean,1,size(Xi{i},2));
+% Clean each window independently (in parallel when a pool is available).
+% Rewritten 2026: the previous version kept each window's result inside the parfor
+% loop and never merged them, so the function returned all zeros.
+cleaned = cell(1, nwin);   % cleaned window, or [] when no component was flagged
+removeAll = false(1, nwin); % every component flagged for removal
+if opt.verbose, fprintf('\nRunning BSS filter in %d sliding windows (parallel)', nwin); end
+crit_opt = opt.crit_opt;
+parfor i = 1:nwin
+    Xi = dataIn(:, init(i):final(i));
+    Ximean = mean(Xi,2);
+    Xi = Xi - repmat(Ximean,1,size(Xi,2));
+    copt = crit_opt;
     if ~isempty(eogref)
-        eogrefi = eogref(:,init(i):final(i));
-        opts(i).crit_opt.eogref = eogrefi;
+        copt.eogref = eogref(:, init(i):final(i));
     end
-
+    bss_fn = str2func([bss_alg '_ifc']);
     if isfield(opt,'bss_opt') && ~isempty(opt.bss_opt)
-        %F = str2fun( strcat( bss_alg ,'_ifc(', DataIni(i),  opt.bss_opt));
-        % Convert function name string to a function handle
-        bss_func_handle = str2func([bss_alg '_ifc']);
-        
-        % Run the function using feval
-        Wi = feval(bss_func_handle, Xi{i}, opt.bss_opt);
-        %[Wi] = feval([bss_alg '_ifc(Xi{i},opt.bss_opt)']);
-
-        Wi = real(Wi);
+        Wi = real(feval(bss_fn, Xi, opt.bss_opt));
     else
-        % Convert function name string to a function handle
-        bss_func_handle = str2func([bss_alg '_ifc']);
-        
-        % Run the function using feval
-        Wi = feval(bss_func_handle, Xi{i});
-        %[Wi] = feval([bss_alg '_ifc(Xi{i})']);
-
-        Wi = real(Wi);
+        Wi = real(feval(bss_fn, Xi));
     end
     if ~isempty(Wi)
         Ai = pinv(Wi);
-        Yi = Wi*Xi{i};
+        Yi = Wi*Xi;
     else
         Ai = [];
         Yi = [];
     end
-
-    % detect the EOG-related components
     switch lower(opt.crit_alg)
         case 'eog_fd'   % fractal dimension
-            [index{i}] = eog_fd(Yi,opt.crit_opt);
+            index = eog_fd(Yi, copt);
         case 'eog_corr' % EOG correlation
-            [index{i}] = eog_corr(Yi,opt.crit_opt);
+            index = eog_corr(Yi, copt);
         case 'emg_psd'  % PSD ratio EEGband/EMGband
-            [index{i}] = emg_psd(Yi,opt.crit_opt);
-        case 'eog_svf' % singular value fraction
-            error('(par_autobss) criterion eog_svf not working yet. Try fd instead.') 
-        case 'eog_joyce' % joyce criterion
-            error('(par_autobss) criterion eog_joyce not working yet. Try eog_fd instead.')
-    end    
-
-    % correct the EOG (avoiding unnecessary operations and rounding errors)
-    if wl>ws
-        % if there is overlap between correlative analysis windows
-        if isempty(index{i})       % leave the data unchanged
-            thisY = X(:,init(i):final(i));        
-        elseif length(index{i})<d   % remove just some components
-            EOG = real(Ai(:,index{i})*Yi(index{i},:));
-            thisY = (Xi{i}-EOG)+repmat(Ximean,1,size(Xi{i},2));
-        else                     % remove all data
-            thisY = zeros(d,wl);
-        end        
-        
-        if i < 2
-            dataOuti(:,1:final(1))=thisY;
-        else
-            dataOuti(:,1:final(i)) = cmerge_overlap(dataOuti(:,1:final(i-1)),thisY,ovlength);
-        end
-    else
-
-        % if there is no overlap
-        if isempty(index{i})       % leave the data unchanged
-            dataOuti(:,init(i):final(i)) = X(:,init(i):final(i));        
-        elseif length(index{i})<d   % remove just some components
-            EOG = real(Ai(:,index{i})*Yi(index{i},:));
-            dataOuti(:,init(i):final(i)) = (Xi{i}-EOG)+repmat(Ximean,1,size(Xi{i},2));
-        end                
+            index = emg_psd(Yi, copt);
+        otherwise
+            error('(par_autobss) unsupported criterion %s', opt.crit_alg);
     end
-
-    % redistribute outputs
-    Ais{i} = Ai; Yis{i} = Yi; Wis{i} = Wi; try thisYs{i} = thisY; catch; end;
-
-    dataOuts{i} = dataOuti; % save the output
-    Ximeans{i} = Ximean;
-    if opt.verbose && ~mod(i,floor(samples/10)), fprintf('.'); end
-
-end % end of parfor loop
-
-
-% merge all samples
-
-
-if opt.verbose,fprintf('\nDone.\n');end
-
-% leave the remaining data unchanged 
-if final(samples)<L
-    dataOut(:,final(samples)+1:end) = dataIn(:,final(samples)+1:end);
+    if isempty(index)
+        cleaned{i} = [];
+    elseif length(index) < d
+        EOG = real(Ai(:,index)*Yi(index,:));
+        cleaned{i} = (Xi-EOG) + repmat(Ximean,1,size(Xi,2));
+    else
+        removeAll(i) = true;
+    end
 end
 
+% Stitch the windows back together in order, as AAR's autobss does
+dataOut = zeros(d, L);
+for i = 1:nwin
+    if wl > ws
+        % overlapping windows: cross-fade each window into the running output
+        if removeAll(i)
+            thisY = zeros(d, wl);
+        elseif isempty(cleaned{i})
+            thisY = dataIn(:, init(i):final(i));
+        else
+            thisY = cleaned{i};
+        end
+        if i < 2
+            dataOut(:, 1:final(1)) = thisY;
+        else
+            dataOut(:, 1:final(i)) = cmerge_overlap(dataOut(:, 1:final(i-1)), thisY, ovlength);
+        end
+    else
+        % non-overlapping windows
+        if isempty(cleaned{i}) && ~removeAll(i)
+            dataOut(:, init(i):final(i)) = dataIn(:, init(i):final(i));
+        elseif ~removeAll(i)
+            dataOut(:, init(i):final(i)) = cleaned{i};
+        end % all components flagged: window stays zero, as in autobss
+    end
+end
+if opt.verbose, fprintf('\nDone.\n'); end
+
+% leave the remaining data unchanged
+if nwin > 0 && final(nwin) < L
+    dataOut(:, final(nwin)+1:end) = dataIn(:, final(nwin)+1:end);
+elseif nwin == 0
+    dataOut = dataIn;
+end
 
 
 
