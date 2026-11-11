@@ -202,4 +202,11 @@ catch
         '''chanfile'', fullfile(dp,''standard_BESA'',''standard-10-5-cap385.elp''), ' ...
         '''coord_transform'', [0 0 0 0 0 0 1 1 1], ''chansel'', 1:E.nbchan)']);
 end
+% DIPFIT stores template files by bare name (found on the path); newer FieldTrip
+% releases check the file directly, so give them full paths
+for f = {'hdmfile', 'mrifile', 'chanfile'}
+    if ~isempty(E.dipfit.(f{1})) && ~isfile(E.dipfit.(f{1})) && ~isempty(which(E.dipfit.(f{1})))
+        E.dipfit.(f{1}) = which(E.dipfit.(f{1}));
+    end
+end
 end
